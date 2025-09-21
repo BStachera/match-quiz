@@ -2,23 +2,57 @@
 <html lang="pl">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="theme-color" content="#111936" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<!-- Kolor paska adresu / status bara / kafelków -->
+<meta name="theme-color" content="#0b0f1a">
+<meta name="msapplication-navbutton-color" content="#0b0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <title>Match Quiz — czy pasujemy?</title>
 <meta name="description" content="Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.">
+
+<!-- Kolory przeglądarki / iOS Safari -->
+<meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0f1629" media="(prefers-color-scheme: light)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="color-scheme" content="dark light">
+
 <style>
   :root{
     --bg1:#0b0f1a; --bg2:#131a2a; --neon1:#00e5ff; --neon2:#ff3af2; --txt:#e8f0ff;
     --card:#0f1629aa; --accent:#7df9ff; --ok:#33ff88; --bad:#ff4d6d; --overlay:rgba(0,0,0,.72);
   }
+
+  html, body { background-color:#0b0f1a; min-height:100%; }
+
   body{
     margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color:var(--txt);
-    background: radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
-               radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
-               linear-gradient(135deg, var(--bg1), var(--bg2));
+    /* gradient przenosimy też do ::before, ale zostawiamy tutaj jako fallback */
+    background:
+      radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
+      radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
+      linear-gradient(135deg, var(--bg1), var(--bg2));
     letter-spacing:.2px;
+    overscroll-behavior: none;
+    padding-left:  env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
   }
+  /* Stała warstwa tła – naprawia białe rogi i przewijanie w Safari */
+  body::before{
+    content:"";
+    position: fixed; inset: 0;
+    z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
+      radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
+      linear-gradient(135deg, #0b0f1a, #131a2a);
+    background-repeat: no-repeat;
+  }
+
   .wrap{max-width:980px; margin:0 auto; padding:24px}
   .title{margin-bottom:15px; font-size:clamp(28px,6vw,48px); font-weight:800; line-height:1.05; text-transform:uppercase;
     text-shadow:0 0 12px var(--neon2), 0 0 22px var(--neon1)}
@@ -109,15 +143,22 @@ const QUESTIONS = [
 function encodeState(o){ return btoa(unescape(encodeURIComponent(JSON.stringify(o)))) }
 function decodeState(b64){ try{ return JSON.parse(decodeURIComponent(escape(atob(b64)))) }catch(e){ return null } }
 function pct(n){ return Math.round(n*100) }
-function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;","</span>":">","\"":"&quot;","'":"&#39;"}[s])) }
+function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])) }
 function escapeAttr(str=''){ return String(str).replace(/"/g,'&quot;') }
 
-function headerBlock(){
+/* Nagłówek: inny dla kreatora i gry */
+function headerBlock(mode = 'creator', name = '') {
+  const isGame = mode === 'game';
+  const title   = isGame ? `Match Quiz <span class="glow">— czy pasujesz do ${escapeHtml(name)}?</span>`
+                         : `Match Quiz <span class="glow">— czy pasujemy?</span>`;
+  const sub     = isGame ? `Wybierz swoje odpowiedzi i zobacz, jak do siebie pasujecie.`
+                         : `Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.`;
+
   return `
     <div class="row" style="justify-content:space-between; align-items:flex-end">
       <div>
-        <div class="title">Match Quiz <span class="glow">— czy pasujemy?</span></div>
-        <div class="subtitle">Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.</div>
+        <div class="title">${title}</div>
+        <div class="subtitle">${sub}</div>
         <button class="btn" id="openAbout">O co chodzi?</button>
       </div>
     </div>`;
@@ -136,7 +177,7 @@ function wireAbout(){
 function viewCreator(){
   app.innerHTML = `
     <div class="grid" style="gap:18px">
-      ${headerBlock()}
+      ${headerBlock('creator')}
       <div class="card">
         <div class="row" style="justify-content:space-between">
           <div class="pill">TRYB KREATORA</div>
@@ -235,6 +276,7 @@ function viewCreator(){
       ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = '#fff'; ctx.fillRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
 
+      // Ostry QR generowany off-screen w docelowym rozmiarze
       const tmp = document.createElement('div');
       tmp.style.position='absolute'; tmp.style.left='-9999px';
       document.body.appendChild(tmp);
@@ -263,7 +305,7 @@ function viewGame(data){
     const q = QUESTIONS[step];
     app.innerHTML = `
       <div class="grid" style="gap:18px">
-        ${headerBlock()}
+        ${headerBlock('game', name)}
         <div class="card">
           <div class="mono" style="opacity:.9; font-weight:800; font-size:18px; margin-bottom:8px">${step+1}. ${q.q}</div>
           <div class="options" data-q="${step}">
@@ -300,7 +342,7 @@ function viewGame(data){
     const contact = data.contact || '';
     app.innerHTML = `
       <div class="grid" style="gap:18px">
-        ${headerBlock()}
+        ${headerBlock('game', name)}
         <div class="card center">
           <div class="mono glow" style="font-size:56px; font-weight:900">${score}%</div>
           <div class="grid" style="gap:10px; margin-top:12px">
@@ -334,12 +376,10 @@ function viewGame(data){
   if(!hash){ viewCreator(); return; }
   const data = decodeState(hash);
   if(!data || !Array.isArray(data.answers) || data.answers.length!==QUESTIONS.length){
-    // jeśli hash uszkodzony → kreator
     history.replaceState({}, '', location.pathname);
-    viewCreator(); 
+    viewCreator();
     return;
   }
-  // poprawnie zakodowane dane → tryb gry
   viewGame(data);
 })();
 </script>
