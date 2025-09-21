@@ -3,18 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<!-- Kolor paska adresu / status bara / kafelków -->
-<meta name="theme-color" content="#0b0f1a">
-<meta name="msapplication-navbutton-color" content="#0b0f1a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
 <title>Match Quiz — czy pasujemy?</title>
 <meta name="description" content="Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.">
 
-<!-- Kolory przeglądarki / iOS Safari -->
+<!-- Kolory przeglądarek / pasków -->
 <meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#0f1629" media="(prefers-color-scheme: light)">
+<meta name="msapplication-navbutton-color" content="#0b0f1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="color-scheme" content="dark light">
@@ -24,13 +19,10 @@
     --bg1:#0b0f1a; --bg2:#131a2a; --neon1:#00e5ff; --neon2:#ff3af2; --txt:#e8f0ff;
     --card:#0f1629aa; --accent:#7df9ff; --ok:#33ff88; --bad:#ff4d6d; --overlay:rgba(0,0,0,.72);
   }
-
   html, body { background-color:#0b0f1a; min-height:100%; }
-
   body{
     margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color:var(--txt);
-    /* gradient przenosimy też do ::before, ale zostawiamy tutaj jako fallback */
     background:
       radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
       radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
@@ -41,7 +33,7 @@
     padding-right: env(safe-area-inset-right);
     padding-bottom: env(safe-area-inset-bottom);
   }
-  /* Stała warstwa tła – naprawia białe rogi i przewijanie w Safari */
+  /* Stałe tło (fix białych „rogów” w Safari) */
   body::before{
     content:"";
     position: fixed; inset: 0;
@@ -89,7 +81,7 @@
     display:grid; place-items:center; box-shadow:0 6px 30px rgba(0,0,0,.25)}
   #qrcode canvas{background:#fff}
 
-  /* MODAL (przycisk „O co chodzi?”) */
+  /* MODAL – „O co chodzi?” */
   .modal{position:fixed; inset:0; display:none; place-items:center; background:var(--overlay); z-index:9999}
   .modal.show{display:grid}
   .modal .sheet{max-width:780px; width:min(92vw,780px)}
@@ -99,7 +91,7 @@
   @media (max-width:700px){
     .wrap{padding:16px}
     .options{grid-template-columns:1fr}
-    .btn{width:90%}
+    .btn{width:100%}
     .url-grid{grid-template-columns:1fr}
     .url-row{flex-direction:column; align-items:stretch}
   }
@@ -140,11 +132,80 @@ const QUESTIONS = [
   {q: 'Styl życia:', a: ['Ranny ptaszek ☀️','Nocny marek 🌙','Elastycznie 😅','Ciężko powiedzieć 🤔']},
 ];
 
+/* ===== utils ===== */
 function encodeState(o){ return btoa(unescape(encodeURIComponent(JSON.stringify(o)))) }
 function decodeState(b64){ try{ return JSON.parse(decodeURIComponent(escape(atob(b64)))) }catch(e){ return null } }
 function pct(n){ return Math.round(n*100) }
 function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])) }
 function escapeAttr(str=''){ return String(str).replace(/"/g,'&quot;') }
+
+/* Walidacja i normalizacja kontaktu + czytelny display */
+function normalizeContact(raw=''){
+  if(!raw) return {ok:false};
+
+  const s = raw.trim();
+
+  // e-mail (mailto: lub goły)
+  const emailRe = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+  if (s.toLowerCase().startsWith('mailto:')) {
+    const addr = s.slice(7);
+    if (emailRe.test(addr)) return {ok:true, href:'mailto:'+addr, display:addr};
+    return {ok:false};
+  }
+  if (emailRe.test(s)) {
+    return {ok:true, href:'mailto:'+s, display:s};
+  }
+
+  // telefon: 9–12 cyfr, opcjonalnie + lub 00; spacje/kreski ignorujemy; akceptujemy też tel:
+  const telClean = s.replace(/[\s-]/g,'');
+  if (/^(?:tel:)?(?:(?:\+|00)?\d{9,12})$/i.test(telClean)) {
+    const digits = telClean.replace(/^tel:/i,'');
+    return {ok:true, href:'tel:'+digits, display:digits.replace(/^00/,'+')};
+  }
+
+  // URL – dodaj https jeśli brak
+  let url;
+  try { url = new URL(/^https?:\/\//i.test(s) ? s : 'https://'+s); }
+  catch { return {ok:false}; }
+
+  const host = url.hostname.replace(/^www\./,'').toLowerCase();
+  const path = url.pathname;
+
+  // WhatsApp
+  if (host==='wa.me' || host==='api.whatsapp.com'){
+    if (/^\/\+?\d{9,12}/.test(path)) return {ok:true, href:url.toString(), display:url.toString()};
+    return {ok:false};
+  }
+
+  // Instagram
+  if (host==='instagram.com' && /^\/[A-Za-z0-9_.-]+\/?$/.test(path))
+    return {ok:true, href:url.toString(), display:'instagram.com'+path};
+
+  // Facebook / Messenger
+  if (host==='facebook.com') return {ok:true, href:url.toString(), display:'facebook.com'+path};
+  if (host==='m.me' && /^\/[A-Za-z0-9_.-]+\/?$/.test(path)) return {ok:true, href:url.toString(), display:'m.me'+path};
+  if (host==='messenger.com' && /^\/t\//.test(path))  return {ok:true, href:url.toString(), display:'messenger.com'+path};
+
+  // Telegram
+  if ((host==='t.me' || host==='telegram.me') && /^\/[A-Za-z0-9_]{3,}/.test(path))
+    return {ok:true, href:url.toString(), display:'t.me'+path};
+
+  // Discord
+  if (host==='discord.gg' && /^\/[A-Za-z0-9]+/.test(path))
+    return {ok:true, href:url.toString(), display:'discord.gg'+path};
+  if (host==='discord.com' && /^\/(users|channels)\//.test(path))
+    return {ok:true, href:url.toString(), display:'discord.com'+path};
+
+  // TikTok
+  if (host==='tiktok.com' && /^\/@[^/]+/.test(path))
+    return {ok:true, href:url.toString(), display:'tiktok.com'+path};
+
+  // X / Twitter
+  if ((host==='x.com' || host==='twitter.com') && /^\/[A-Za-z0-9_]{1,15}\/?$/.test(path))
+    return {ok:true, href:url.toString(), display:host+path};
+
+  return {ok:false};
+}
 
 /* Nagłówek: inny dla kreatora i gry */
 function headerBlock(mode = 'creator', name = '') {
@@ -174,7 +235,7 @@ function wireAbout(){
 }
 
 /* ========== KREATOR ========== */
-function viewCreator(){
+function viewCreator(prefillAnswers=null){
   app.innerHTML = `
     <div class="grid" style="gap:18px">
       ${headerBlock('creator')}
@@ -189,7 +250,8 @@ function viewCreator(){
           </label>
           <label>
             <div class="small muted">Link do kontaktu:</div>
-            <input id="contact" type="url" placeholder="np. https://wa.me/48XXXXXXXXX" />
+            <input id="contact" type="url" placeholder="np. tel:+48123456789 / wa.me/48… / nick@domena.pl / instagram.com/nick / x.com/nick" />
+            <div class="hint" id="contactHint"></div>
           </label>
         </div>
       </div>
@@ -233,6 +295,18 @@ function viewCreator(){
   wireAbout();
 
   const chosen = Array(QUESTIONS.length).fill(null);
+
+  // Prefill wyborów z gry (jeśli są)
+  if (Array.isArray(prefillAnswers) && prefillAnswers.length === QUESTIONS.length){
+    prefillAnswers.forEach((ai, qi)=>{
+      const box = app.querySelector(`.options[data-q="${qi}"]`);
+      if(box){
+        const opt = box.querySelector(`.opt[data-a="${ai}"]`);
+        if(opt){ opt.classList.add('selected'); chosen[qi]=ai; }
+      }
+    });
+  }
+
   app.querySelectorAll('.options').forEach(box=>{
     box.addEventListener('click', (e)=>{
       const opt = e.target.closest('.opt'); if(!opt) return;
@@ -244,13 +318,30 @@ function viewCreator(){
   });
 
   el('#reset').onclick = ()=> viewCreator();
+
   el('#gen').onclick = ()=>{
     const name = el('#name').value.trim() || 'Autor';
-    const contact = el('#contact').value.trim() || '';
+    const contactRaw = el('#contact').value.trim();
+    let contact = '';
+    const hint = el('#contactHint');
+
+    if (contactRaw){
+      const norm = normalizeContact(contactRaw);
+      if (!norm.ok){
+        hint.textContent = '⚠️ Niedozwolony kontakt. Dozwolone: tel (9–12 cyfr, +/00 opcjonalnie), WhatsApp, Instagram, Facebook/Messenger, Telegram, Discord, TikTok, X/Twitter, e-mail.';
+        hint.style.color = '#ff8888';
+        return; // blokujemy generowanie
+      } else {
+        hint.textContent = '';
+        contact = norm.href; // zapisujemy znormalizowany href
+      }
+    }
+
     if(chosen.some(x=>x===null)){
       alert('Uzupełnij wszystkie odpowiedzi.');
       return;
     }
+
     const payload = {version:1, name, contact, answers: chosen};
     const hash = encodeState(payload);
     const url = location.origin + location.pathname + '#' + hash;
@@ -276,7 +367,7 @@ function viewCreator(){
       ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = '#fff'; ctx.fillRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
 
-      // Ostry QR generowany off-screen w docelowym rozmiarze
+      // Ostry QR off-screen
       const tmp = document.createElement('div');
       tmp.style.position='absolute'; tmp.style.left='-9999px';
       document.body.appendChild(tmp);
@@ -285,8 +376,9 @@ function viewCreator(){
       if(qrCanvas) ctx.drawImage(qrCanvas, OFFSET, OFFSET);
       document.body.removeChild(tmp);
 
+      const outName = (el('#name').value.trim() || 'Autor');
       ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.font='40px monospace';
-      ctx.fillText('match-quiz + ' + name, CANVAS_SIZE/2, CANVAS_SIZE-20);
+      ctx.fillText('match-quiz + ' + outName, CANVAS_SIZE/2, CANVAS_SIZE-20);
 
       const a=document.createElement('a'); a.download='match-quiz.png'; a.href=canvas.toDataURL('image/png'); a.click();
     };
@@ -339,7 +431,14 @@ function viewGame(data){
     let matches=0;
     for(let i=0;i<QUESTIONS.length;i++){ if((data.answers||[])[i]===picked[i]) matches++; }
     const score = pct(matches/QUESTIONS.length);
-    const contact = data.contact || '';
+    const normContact = normalizeContact(data.contact || '');
+    const contactBtn = normContact.ok
+      ? `<a class="btn primary" href="${escapeAttr(normContact.href)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>`
+      : '';
+    const contactText = normContact.ok
+      ? `<div class="muted" style="margin-top:8px; user-select:all;">Kontakt: ${escapeHtml(normContact.display || normContact.href)}</div>`
+      : '';
+
     app.innerHTML = `
       <div class="grid" style="gap:18px">
         ${headerBlock('game', name)}
@@ -359,12 +458,23 @@ function viewGame(data){
             }).join('')}
           </div>
           <div class="row" style="justify-content:center; margin-top:14px">
-            ${contact?`<a class="btn primary" href="${escapeAttr(contact)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>`:''}
+            ${contactBtn}
           </div>
+          ${contactText}
         </div>
-        <div class="center"><a class="btn" href="${location.origin+location.pathname}">Stwórz własny quiz</a></div>
+        <div class="center">
+          <a class="btn" id="makeOwn">Stwórz własny quiz</a>
+        </div>
       </div>`;
+
     wireAbout();
+
+    // Przeniesienie odpowiedzi do kreatora (prefill)
+    el('#makeOwn').onclick = ()=>{
+      try{ sessionStorage.setItem('prefillAnswers', JSON.stringify(picked)); }catch{}
+      history.replaceState({}, '', location.pathname); // usuń hash
+      viewCreator(picked);
+    };
   };
 
   render();
@@ -372,12 +482,19 @@ function viewGame(data){
 
 /* ========== START ========== */
 (function init(){
+  // Prefill z poprzedniej gry
+  let prefill = null;
+  try{
+    const raw = sessionStorage.getItem('prefillAnswers');
+    if(raw){ prefill = JSON.parse(raw); sessionStorage.removeItem('prefillAnswers'); }
+  }catch{}
+
   const hash = location.hash.replace(/^#/,'');
-  if(!hash){ viewCreator(); return; }
+  if(!hash){ viewCreator(prefill); return; }
   const data = decodeState(hash);
   if(!data || !Array.isArray(data.answers) || data.answers.length!==QUESTIONS.length){
     history.replaceState({}, '', location.pathname);
-    viewCreator();
+    viewCreator(prefill);
     return;
   }
   viewGame(data);
