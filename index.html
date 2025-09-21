@@ -21,7 +21,7 @@
   .wrap{max-width:980px; margin:0 auto; padding:24px}
   .title{margin-bottom:15px; font-size:clamp(28px,6vw,48px); font-weight:800; line-height:1.05; text-transform:uppercase;
     text-shadow:0 0 12px var(--neon2), 0 0 22px var(--neon1)}
-  .subtitle{opacity:.95; margin-top:6px; margin-bottom: 15px;}
+  .subtitle{opacity:.95; margin-top:6px; margin-bottom:15px}
   .grid{display:grid; gap:16px; margin-top:15px}
   .card{background:var(--card); backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,.08);
     border-radius:18px; padding:18px; box-shadow:0 12px 40px rgba(0,0,0,.35)}
@@ -54,7 +54,7 @@
     display:grid; place-items:center; box-shadow:0 6px 30px rgba(0,0,0,.25)}
   #qrcode canvas{background:#fff}
 
-  /* MODAL – zawsze nad wszystkim, 1:1 styl */
+  /* MODAL (przycisk „O co chodzi?”) */
   .modal{position:fixed; inset:0; display:none; place-items:center; background:var(--overlay); z-index:9999}
   .modal.show{display:grid}
   .modal .sheet{max-width:780px; width:min(92vw,780px)}
@@ -74,7 +74,7 @@
 <body>
   <div class="wrap" id="app"></div>
 
-  <!-- Modal wpinany na body, aby był nad wszystkim -->
+  <!-- Modal -->
   <div class="modal" id="aboutModal" aria-hidden="true">
     <div class="card sheet">
       <div class="row" style="justify-content:space-between; align-items:flex-end">
@@ -82,14 +82,12 @@
         <button class="btn" id="closeAbout">Zamknij</button>
       </div>
       <div class="grid" style="gap:10px; margin-top:8px">
-      <div class="subtitle">Krótka gra dla tych, którzy uważają, że pierwsza rozmowa powinna być… grą.</div>
-        <p>W klasycznych aplikacjach randkowych start bywa słaby: „hej”, „co tam?”, cisza. <strong>Match quiz</strong> odwraca to do góry nogami. Zamiast presji na idealny tekst — dostajesz <em>mini‑grę</em>. Pięć lekkich pytań, szybkie wybory i wynik zgodności. Potem decyzja: chcemy pogadać, czy nie.</p>
-        <p>Dlaczego to działa? Bo na starcie daje <strong>wspólne doświadczenie</strong>. Jest śmiesznie, jest krótko, jest konkretnie. I bez „przesłuchania”. Quiz i ankieta to najlepszy wstęp — <em>gra wstępna do rozmowy</em>.</p>
-        <ul>
-          <li><strong>Zero spiny</strong> — to tylko 2–3 minuty.</li>
-          <li><strong>Równe szanse</strong> — obie osoby klikają, obie mają wkład.</li>
+        <div class="subtitle">Krótka gra dla tych, którzy uważają, że pierwsza rozmowa powinna być… grą.</div>
+        <p>W klasycznych apkach start bywa słaby: „hej”, „co tam?”, cisza. <strong>Match Quiz</strong> odwraca to — zamiast presji na idealny tekst masz <em>mini-grę</em>. Pięć lekkich pytań, szybkie wybory i wynik zgodności. Potem decyzja: gadamy, czy nie.</p>
+        <ul style="margin:0 0 8px 18px">
+          <li><strong>Zero spiny</strong> — 2–3 minuty i gotowe.</li>
+          <li><strong>Równe szanse</strong> — obie osoby klikają.</li>
           <li><strong>Pretekst do rozmowy</strong> — „serio wolisz sushi od pizzy?”</li>
-        </ul>
         </ul>
       </div>
     </div>
@@ -110,7 +108,7 @@ const QUESTIONS = [
 function encodeState(o){ return btoa(unescape(encodeURIComponent(JSON.stringify(o)))) }
 function decodeState(b64){ try{ return JSON.parse(decodeURIComponent(escape(atob(b64)))) }catch(e){ return null } }
 function pct(n){ return Math.round(n*100) }
-function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])) }
+function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;","</span>":">","\"":"&quot;","'":"&#39;"}[s])) }
 function escapeAttr(str=''){ return String(str).replace(/"/g,'&quot;') }
 
 function headerBlock(){
@@ -128,11 +126,12 @@ function wireAbout(){
   const modal = el('#aboutModal');
   const openBtn = el('#openAbout');
   const closeBtn = el('#closeAbout');
-  if(openBtn){ openBtn.onclick = ()=> modal.classList.add('show'); }
-  if(closeBtn){ closeBtn.onclick = ()=> modal.classList.remove('show'); }
+  if (openBtn) openBtn.onclick = ()=> modal.classList.add('show');
+  if (closeBtn) closeBtn.onclick = ()=> modal.classList.remove('show');
   modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('show'); });
 }
 
+/* ========== KREATOR ========== */
 function viewCreator(){
   app.innerHTML = `
     <div class="grid" style="gap:18px">
@@ -189,10 +188,8 @@ function viewCreator(){
       </div>
     </div>`;
 
-  // przycisk „O co chodzi?”
   wireAbout();
 
-  // logika wyborów
   const chosen = Array(QUESTIONS.length).fill(null);
   app.querySelectorAll('.options').forEach(box=>{
     box.addEventListener('click', (e)=>{
@@ -217,18 +214,15 @@ function viewCreator(){
     const url = location.origin + location.pathname + '#' + hash;
     el('#shareUrl').value = url;
 
-    // QR + podpis pod podglądem
     if(typeof QRCode === 'function'){
       const qrWrap = el('#qrcode'); qrWrap.innerHTML = '';
       new QRCode(qrWrap, {text:url, width:240, height:240, colorDark:'#000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M});
       el('#qrCaption').textContent = 'match-quiz + ' + name;
     }
 
-    // akcje
     el('#copy').onclick = async ()=>{ try{ await navigator.clipboard.writeText(el('#shareUrl').value); }catch(e){} };
     el('#openQuiz').onclick = ()=>{ const u = el('#shareUrl').value; if(u) window.open(u, '_blank'); };
 
-    // eksport 1000x1000, QR 85%, ostry, podpis na dole
     el('#saveqr').onclick = ()=>{
       const CANVAS_SIZE = 1000, SCALE = 0.85;
       const QR_SIZE = Math.round(CANVAS_SIZE*SCALE);
@@ -240,7 +234,6 @@ function viewCreator(){
       ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = '#fff'; ctx.fillRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
 
-      // generujemy ostry QR off-screen dokładnie w docelowym rozmiarze
       const tmp = document.createElement('div');
       tmp.style.position='absolute'; tmp.style.left='-9999px';
       document.body.appendChild(tmp);
@@ -249,11 +242,9 @@ function viewCreator(){
       if(qrCanvas) ctx.drawImage(qrCanvas, OFFSET, OFFSET);
       document.body.removeChild(tmp);
 
-      // podpis
       ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.font='40px monospace';
       ctx.fillText('match-quiz + ' + name, CANVAS_SIZE/2, CANVAS_SIZE-20);
 
-      // zapis
       const a=document.createElement('a'); a.download='match-quiz.png'; a.href=canvas.toDataURL('image/png'); a.click();
     };
 
@@ -261,14 +252,94 @@ function viewCreator(){
   };
 }
 
-// start
+/* ========== GRA ========== */
+function viewGame(data){
+  const name = data.name || 'Autor';
+  let step = 0;
+  const picked = Array(QUESTIONS.length).fill(null);
+
+  const render = ()=>{
+    const q = QUESTIONS[step];
+    app.innerHTML = `
+      <div class="grid" style="gap:18px">
+        ${headerBlock()}
+        <div class="card">
+          <div class="mono" style="opacity:.9; font-weight:800; font-size:18px; margin-bottom:8px">${step+1}. ${q.q}</div>
+          <div class="options" data-q="${step}">
+            ${q.a.map((t,i)=>`<div class="opt" data-a="${i}">${t}</div>`).join('')}
+          </div>
+          <div class="row" style="margin-top:12px">
+            <button class="btn" id="back" ${step===0?'disabled style="opacity:.4;cursor:not-allowed"':''}>Wstecz</button>
+            <div style="flex:1"></div>
+            <button class="btn primary" id="next">${step===QUESTIONS.length-1?'Pokaż wynik':'Dalej →'}</button>
+          </div>
+        </div>
+        <div class="center muted small">Grasz o: <span class="glow">${escapeHtml(name)}</span></div>
+      </div>`;
+
+    wireAbout();
+
+    app.querySelector('.options').addEventListener('click', e=>{
+      const o = e.target.closest('.opt'); if(!o) return;
+      picked[step] = +o.dataset.a;
+      app.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));
+      o.classList.add('selected');
+    });
+    el('#back')?.addEventListener('click', ()=>{ if(step>0){ step--; render(); } });
+    el('#next').addEventListener('click', ()=>{
+      if(picked[step]===null){ alert('Zaznacz odpowiedź.'); return; }
+      if(step<QUESTIONS.length-1){ step++; render(); } else { showResult(); }
+    });
+  };
+
+  const showResult = ()=>{
+    let matches=0;
+    for(let i=0;i<QUESTIONS.length;i++){ if((data.answers||[])[i]===picked[i]) matches++; }
+    const score = pct(matches/QUESTIONS.length);
+    const contact = data.contact || '';
+    app.innerHTML = `
+      <div class="grid" style="gap:18px">
+        ${headerBlock()}
+        <div class="card center">
+          <div class="mono glow" style="font-size:56px; font-weight:900">${score}%</div>
+          <div class="grid" style="gap:10px; margin-top:12px">
+            ${QUESTIONS.map((qq,i)=>{
+              const ok = (data.answers||[])[i]===picked[i];
+              const you = qq.a[(data.answers||[])[i]];
+              const her = qq.a[picked[i]];
+              return `<div class="row small mono"><div style="width:20px">${i+1}.</div>
+                <div class="muted">${qq.q}</div>
+                <div class="mono" style="margin-left:6px">
+                  <span style="color:${ok?'var(--ok)':'var(--bad)'}">${ok?'✔︎ Zgodne':'✖︎ Różne'}</span>
+                  <span class="muted"> — Ty: ${escapeHtml(her)} | ${escapeHtml(name)}: ${escapeHtml(you)}</span>
+                </div></div>`;
+            }).join('')}
+          </div>
+          <div class="row" style="justify-content:center; margin-top:14px">
+            ${contact?`<a class="btn primary" href="${escapeAttr(contact)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>`:''}
+          </div>
+        </div>
+        <div class="center"><a class="btn" href="${location.origin+location.pathname}">Stwórz własny quiz</a></div>
+      </div>`;
+    wireAbout();
+  };
+
+  render();
+}
+
+/* ========== START ========== */
 (function init(){
   const hash = location.hash.replace(/^#/,'');
   if(!hash){ viewCreator(); return; }
   const data = decodeState(hash);
-  if(!data){ viewCreator(); return; }
-  // Możesz tu wstawić tryb gry; na razie wracamy do kreatora:
-  viewCreator();
+  if(!data || !Array.isArray(data.answers) || data.answers.length!==QUESTIONS.length){
+    // jeśli hash uszkodzony → kreator
+    history.replaceState({}, '', location.pathname);
+    viewCreator(); 
+    return;
+  }
+  // poprawnie zakodowane dane → tryb gry
+  viewGame(data);
 })();
 </script>
 </body>
