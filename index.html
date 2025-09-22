@@ -4,14 +4,13 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Match Quiz — czy pasujemy?</title>
-<meta name="description" content="Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.">
+<meta name="description" content="Ustaw swoje preferencje, wygeneruj link i wyślij. Druga osoba odpowie, a system policzy zgodność. Zero spiny, czysta zabawa.">
 <!-- Kolory przeglądarek / pasków -->
 <meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#0f1629" media="(prefers-color-scheme: light)">
 <meta name="msapplication-navbutton-color" content="#0b0f1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
 <meta name="color-scheme" content="dark light">
 <!-- Ikony -->
 <link rel="icon" type="image/png" href="favicon.png" sizes="32x32">
@@ -19,7 +18,7 @@
 <link rel="manifest" href="site.webmanifest">
 <!-- Open Graph / Twitter -->
 <meta property="og:title" content="Match Quiz — zagraj ze mną!" />
-<meta property="og:description" content="5 pytań, wyniki zgodności i zero spiny. Sprawdźmy, czy pasujemy 💫" />
+<meta property="og:description" content="Szybki quiz, wynik zgodności i zero spiny. Sprawdźmy, czy pasujemy 💫" />
 <meta property="og:image" content="icon.png" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -28,672 +27,604 @@
   content="default-src 'self'; img-src 'self' data:; media-src 'none'; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'none'; base-uri 'none'; form-action 'none'">
 
 <style>
-  /* iOS: nie powiększaj tekstu i nie rób auto-zoomu na inputach */
+/* iOS: nie powiększaj tekstu na inputach */
 html { -webkit-text-size-adjust: 100%; }
+input[type="text"],input[type="url"],input[type="tel"],textarea,select{font-size:16px;line-height:1.25;min-height:44px}
+@supports (-webkit-touch-callout:none){input[type="text"],input[type="url"],input[type="tel"],textarea,select{font-size:16px!important}}
+:focus-visible{outline:2px solid rgba(0,229,255,.6); outline-offset:2px}
 
-/* Minimalny rozmiar fontu w polach formularza = 16px (próg iOS) */
-input[type="text"],
-input[type="url"],
-input[type="tel"],
-textarea,
-select {
-  font-size: 16px;           /* kluczowe – zatrzymuje auto-zoom */
-  line-height: 1.25;
-  min-height: 44px;          /* wygodny tap target */
+:root{
+  --bg1:#0b0f1a; --bg2:#131a2a; --neon1:#00e5ff; --neon2:#ff3af2; --txt:#e8f0ff;
+  --card:#0f1629aa; --accent:#7df9ff; --ok:#33ff88; --bad:#ff4d6d; --overlay:rgba(0,0,0,.72);
 }
-
-/* Opcjonalnie: tylko dla Safari/iOS (gdybyś nie chciał wpływać na inne przeglądarki) */
-@supports (-webkit-touch-callout: none) {
-  input[type="text"],
-  input[type="url"],
-  input[type="tel"],
-  textarea,
-  select { font-size: 16px !important; }
-}
-:focus-visible { outline: 2px solid rgba(0,229,255,.6); outline-offset: 2px; }
-
-  :root{
-    --bg1:#0b0f1a; --bg2:#131a2a; --neon1:#00e5ff; --neon2:#ff3af2; --txt:#e8f0ff;
-    --card:#0f1629aa; --accent:#7df9ff; --ok:#33ff88; --bad:#ff4d6d; --overlay:rgba(0,0,0,.72);
-  }
-  html, body { background-color:#0b0f1a; min-height:100%; }
-  body{
-      padding-top: env(safe-area-inset-top);
+html, body { background-color:#0b0f1a; min-height:100%; }
+body{
+  padding-top: env(safe-area-inset-top);
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
   padding-bottom: env(safe-area-inset-bottom);
-    margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    color:var(--txt);
-    background:
-      radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
-      radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
-      linear-gradient(135deg, var(--bg1), var(--bg2));
-    letter-spacing:.2px;
-    overscroll-behavior: none;
-    padding-left:  env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  /* Stałe tło (fix białych „rogów” w Safari) */
-  body::before{
-    content:""; position: fixed; inset: 0; z-index:-1; pointer-events:none;
-    background:
-      radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
-      radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
-      linear-gradient(135deg, #0b0f1a, #131a2a);
-    background-repeat: no-repeat;
-  }
-
-  .wrap{max-width:980px; margin:0 auto; padding:24px}
-  .title{margin-bottom:15px; font-size:clamp(28px,6vw,48px); font-weight:800; line-height:1.05; text-transform:uppercase;
-    text-shadow:0 0 12px var(--neon2), 0 0 22px var(--neon1)}
-  .subtitle{opacity:.95; margin-top:6px; margin-bottom:15px}
-  .grid{display:grid; gap:16px; margin-top:15px}
-  .card{background:var(--card); backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,.08);
-    border-radius:18px; padding:18px; box-shadow:0 12px 40px rgba(0,0,0,.35)}
-  .btn{display:inline-block; padding:12px 18px; border-radius:14px;
-    border:1px solid rgba(255,255,255,.14);
-    background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
-    color:var(--txt); text-decoration:none; cursor:pointer; font-weight:700; letter-spacing:.4px; text-align:center;
-    transition: transform .06s ease, box-shadow .2s ease, border-color .2s}
-  .btn:hover{transform: translateY(-1px); box-shadow:0 0 18px var(--neon1); border-color: var(--accent)}
-  .btn.primary{margin-top:20px; background:linear-gradient(180deg, rgba(0,229,255,.18), rgba(255,58,242,.15))}
-  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
-  input[type="text"], input[type="url"]{
-    margin-top:10px; width:90%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.12);
-    background:#0d1324; color:var(--txt)
-  }
-  .hint{font-size:13px; opacity:.8}
-  .pill{display:inline-block; width:auto; max-width:max-content; padding:6px 10px; border-radius:999px;
-    background:rgba(0,229,255,.12); font-size:13px}
-  .options{display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(200px,1fr))}
-  .opt{padding:12px; border-radius:14px; background:#0b1222; border:1px solid rgba(255,255,255,.10); cursor:pointer; outline:none}
-  .opt:hover{border-color: var(--accent)}
-  .opt.selected{border-color: var(--neon2); box-shadow:0 0 16px rgba(255,58,242,.35)}
-  .opt:focus{box-shadow:0 0 0 3px rgba(0,229,255,.35), 0 0 0 1px rgba(255,255,255,.2) inset}
-  .center{text-align:center}
-  .muted{opacity:.75}
-  .glow{color:var(--neon1); text-shadow:0 0 14px var(--neon1)}
-  .mono{font-variant-numeric: tabular-nums}
-  .url-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:center}
-  .url-row{display:flex; gap:10px; align-items:center}
-  .qr-box{margin-left: 12px; width:280px; aspect-ratio:1/1; background:#fff; padding:10px; border-radius:12px;
-    display:grid; place-items:center; box-shadow:0 6px 30px rgba(0,0,0,.25)}
-  #qrcode canvas{background:#fff}
-
-  /* MODAL – „O co chodzi?” */
-.modal {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,.65);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color:var(--txt);
+  background:
+    radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
+    radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
+    linear-gradient(135deg, var(--bg1), var(--bg2));
+  letter-spacing:.2px; overscroll-behavior:none;
+}
+body::before{
+  content:""; position: fixed; inset: 0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
+    radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
+    linear-gradient(135deg, #0b0f1a, #131a2a);
+  background-repeat:no-repeat;
 }
 
-.modal.show { display:flex; }
+.wrap{max-width:980px; margin:0 auto; padding:24px}
+.title{margin-bottom:15px; font-size:clamp(28px,6vw,48px); font-weight:800; line-height:1.05; text-transform:uppercase;
+  text-shadow:0 0 12px var(--neon2), 0 0 22px var(--neon1)}
+.subtitle{opacity:.95; margin:6px 0 15px}
+.grid{display:grid; gap:16px; margin-top:15px}
+.card{background:var(--card); backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,.08);
+  border-radius:18px; padding:18px; box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.btn{display:inline-block; padding:12px 18px; border-radius:14px;
+  border:1px solid rgba(255,255,255,.14);
+  background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  color:var(--txt); text-decoration:none; cursor:pointer; font-weight:700; letter-spacing:.4px; text-align:center;
+  transition: transform .06s ease, box-shadow .2s ease, border-color .2s}
+.btn:hover{transform: translateY(-1px); box-shadow:0 0 18px var(--neon1); border-color: var(--accent)}
+.btn.primary{background:linear-gradient(180deg, rgba(0,229,255,.18), rgba(255,58,242,.15))}
+.btn.ghost{background:transparent}
+.btn.small{padding:8px 10px; font-weight:600; border-radius:10px}
 
-.modal .sheet {
-  background: var(--card);
-  border-radius: 16px;
-  padding: 18px;
-  width: calc(100% - 10px);   /* po 5px marginesu z lewej i prawej */
-  max-width: 720px;
-  height: 90%;                /* 90% wysokości ekranu */
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;           /* przewijanie gdy treści jest za dużo */
-  box-shadow: 0 12px 40px rgba(0,0,0,.35);
+.row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+input[type="text"], input[type="url"]{
+  margin-top:10px; width:90%; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.12);
+  background:#0d1324; color:var(--txt)
 }
+.hint{font-size:13px; opacity:.8}
+.pill{display:inline-block; width:auto; max-width:max-content; padding:6px 10px; border-radius:999px;
+  background:rgba(0,229,255,.12); font-size:13px}
+.options{display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(200px,1fr))}
+.opt{padding:12px; border-radius:14px; background:#0b1222; border:1px solid rgba(255,255,255,.10); cursor:pointer; outline:none}
+.opt:hover{border-color: var(--accent)}
+.opt.selected{border-color: var(--neon2); box-shadow:0 0 16px rgba(255,58,242,.35)}
+.opt:focus{box-shadow:0 0 0 3px rgba(0,229,255,.35), 0 0 0 1px rgba(255,255,255,.2) inset}
+.center{text-align:center}
+.muted{opacity:.75}
+.glow{color:var(--neon1); text-shadow:0 0 14px var(--neon1)}
+.mono{font-variant-numeric: tabular-nums}
+.url-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:center}
+.url-row{display:flex; gap:10px; align-items:center}
+.qr-box{margin-left:12px; width:280px; aspect-ratio:1/1; background:#fff; padding:10px; border-radius:12px; display:grid; place-items:center; box-shadow:0 6px 30px rgba(0,0,0,.25)}
+#qrcode canvas{background:#fff}
 
+/* Modal */
+.modal{position:fixed; inset:0; background:rgba(0,0,0,.65); display:none; align-items:center; justify-content:center; z-index:1000}
+.modal.show{display:flex}
+.modal .sheet{background:var(--card); border-radius:16px; padding:18px; width:calc(100% - 10px); max-width:720px; height:90%;
+  margin:auto; display:flex; flex-direction:column; overflow-y:auto; box-shadow:0 12px 40px rgba(0,0,0,.35)}
 
-  /* Motion reduce */
-  @media (prefers-reduced-motion: reduce){
-    *{transition:none!important; animation:none!important}
-  }
-  @media (max-width:700px){
-    .wrap{padding:16px}
-    .options{grid-template-columns:1fr}
-    .btn{width:100%}
-    .url-grid{grid-template-columns:1fr}
-    .url-row{flex-direction:column; align-items:stretch}
-  }
+/* Motion reduce */
+@media (prefers-reduced-motion: reduce){*{transition:none!important; animation:none!important}}
+@media (max-width:700px){
+  .wrap{padding:16px}
+  .options{grid-template-columns:1fr}
+  .btn{width:100%}
+  .url-grid{grid-template-columns:1fr}
+  .url-row{flex-direction:column; align-items:stretch}
+}
 </style>
 <script src="qrcode.min.js"></script>
 </head>
 <body>
-  <script>
-/*! LZ-String (only URI methods) – https://github.com/pieroxy/lz-string */
-const LZString=(function(){function o(o,r){if(!t[o]){t[o]={};for(let n=0;n<o.length;n++)t[o][o.charAt(n)]=n}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},e={compressToEncodedURIComponent:function(t){return null==t?"":e._compress(t,6,function(t){return n.charAt(t)})},decompressFromEncodedURIComponent:function(t){return null==t?"":""==t?null:e._decompress(t.length,32,function(e){return o(n,t.charAt(e))})},_compress:function(o,n,t){if(null==o)return"";var e,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else{if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==n-1?(v=0,d.push(t(m)),m=0):v++;for(i=a.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}else{for(i=1,e=0;e<h;e++)m=m<<1|i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i=0;for(i=a.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(i=s[a],e=0;e<h;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u)}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==n-1?(v=0,d.push(t(m)),m=0):v++;for(i=a.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}else{for(i=1,e=0;e<h;e++)m=m<<1|i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i=0;for(i=a.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(i=s[a],e=0;e<h;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1;l--,0==l&&(l=Math.pow(2,h),h++)}for(i=1,e=0;e<h;e++)m=m<<1|i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i=0;for(i=2,e=0;e<h;e++)m=m<<1|i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i=0;for(;;){if(m<<=1,v==n-1){d.push(t(m));break}v++}return d.join("")},_decompress:function(o,n,t){var e,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:t(0),position:n,index:1};for(i=0;i<3;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return"";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else{if(l!==d)return null;v=s+s.charAt(0)}w.push(v),f[d++]=s+v.charAt(0),s=v,0==--h&&(h=Math.pow(2,m),m++)}}
+<script>
+/*! LZ-String (URI methods only) */
+const LZString=(function(){function o(o,r){if(!t[o]){t[o]={};for(let n=0;n<o.length;n++)t[o][o.charAt(n)]=n}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},e={compressToEncodedURIComponent:function(t){return null==t?"":e._compress(t,6,function(t){return n.charAt(t)})},decompressFromEncodedURIComponent:function(t){return null==t?"":""==t?null:e._decompress(t.length,32,function(e){return o(n,t.charAt(e))})},_compress:function(o,n,t){if(null==o)return"";var e,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else{if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==n-1?(v=0,d.push(t(m)),m=0):v++;for(i=a.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}else{for(i=1,e=0;e<h;e++)m=m<<1|i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i=0;for(i=a.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(i=s[a],e=0;e<h;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u)}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;e<h;e++)m<<=1,v==n-1?(v=0,d.push(t(m)),m=0):v++;for(i=a.charCodeAt(0),e=0;e<8;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}else{for(i=1,e=0;e<h;e++)m=m<<1|i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i=0;for(i=a.charCodeAt(0),e=0;e<16;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(i=s[a],e=0;e<h;e++)m=m<<1|1&i,v==n-1?(v=0,d.push(t(m)),m=0):v++,i>>=1;l--,0==l&&(l=Math.pow(2,h),h++)}for(i=1,e=0;e<h;e++)m=m<<1|i,v==n-1?(v=0,d.push(t(m));break):v++}return d.join("")},_decompress:function(o,n,t){var e,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:t(0),position:n,index:1};for(i=0;i<3;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return"";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=t(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else{if(l!==d)return null;v=s+s.charAt(0)}w.push(v),f[d++]=s+v.charAt(0),s=v,0==--h&&(h=Math.pow(2,m),m++)}}
 })();</script>
 
-  <div class="wrap" id="app"></div>
+<div class="wrap" id="app"></div>
 
-<!-- Modal -->
+<!-- Modal „O co chodzi?” – nowa, szczegółowa treść -->
 <div class="modal" id="aboutModal" aria-hidden="true">
   <div class="card sheet" role="dialog" aria-labelledby="aboutTitle" aria-modal="true">
     <div class="row" style="justify-content:space-between; align-items:flex-end">
-      <div id="aboutTitle" class="title" style="font-size:28px; margin:0">Dlaczego powstał Match Quiz?</div>
+      <div id="aboutTitle" class="title" style="font-size:28px; margin:0">O co chodzi w Match Quiz?</div>
       <button class="btn" id="closeAbout" aria-label="Zamknij okno">Zamknij</button>
     </div>
 
-    <div class="grid" style="gap:10px; margin-top:12px">
-
-      <!-- Historia / geneza -->
-      <p class="subtitle" style="margin-bottom:6px">
-        <b>Krótka gra = dobry start.</b> Z rozmów ze znajomymi i własnych doświadczeń: pierwsze „hej” bywa niezręczne,
-        a algorytmy nie pomagają przełamać lodów. Chcieliśmy dać coś prostego, wspólnego i lekkiego —
-        stąd pomysł na 5-pytań, które od razu tworzą temat do rozmowy.
+    <div class="grid" style="gap:12px; margin-top:6px">
+      <p class="subtitle" style="margin-bottom:4px">
+        <b>Krótka gra = łatwy start rozmowy.</b> Zamiast szukać „idealnego hej”, zagracie w kilka pytań
+        i od razu macie temat. To lekko, naturalnie i bez spiny.
       </p>
 
-      <!-- Dlaczego działa -->
-      <p style="margin:0">
-        Psychologicznie wspólne działanie (tu: mini-gra) obniża barierę, a wynik staje się naturalnym
-        pretekstem: „Serio wolisz sushi od pizzy?” — to brzmi lepiej niż kolejny suchy small talk.
-        To nie test zgodności — to <b>zabawa i pretekst do rozmowy</b>.
-      </p>
+      <div>
+        <strong>Skąd pomysł?</strong>
+        <p style="margin:.4em 0 0">
+          Pierwsze wiadomości w apkach randkowych bywają niezręczne. Wspólna aktywność (gra) obniża barierę,
+          a wynik daje pretekst do rozmowy: „Serio wolisz sushi od pizzy?”. To nie test zgodności — to
+          <b>zabawa i iskrzenie kontekstu</b>.
+        </p>
+      </div>
 
-      <!-- Jak działa – 3 kroki -->
-      <div style="margin-top:8px">
-        <strong>Jak to działa (3 kroki):</strong>
-        <ol style="margin:6px 0 0 18px">
-          <li>Ustaw imię, opcjonalnie kontakt i odpowiedz na 5 pytań.</li>
+      <div>
+        <strong>Jak to działa – w 3 krokach:</strong>
+        <ol style="margin:.4em 0 0 18px">
+          <li>Ustaw imię, (opcjonalnie) kontakt i zestaw pytań (bazowe + losowe + własne Tak/Nie).</li>
           <li>Wygeneruj link lub QR i wyślij / pokaż.</li>
-          <li>Druga osoba klika, odpowiada i dostajecie procent zgodności.</li>
+          <li>Druga osoba odpowiada — od razu widzicie procent zgodności.</li>
         </ol>
       </div>
 
-      <!-- Zastosowania -->
-      <div style="margin-top:8px">
-        <strong>Gdzie się sprawdzi?</strong>
-        <ul style="margin:6px 0 0 18px">
-          <li>Na start w aplikacjach randkowych — szybki, kreatywny icebreaker.</li>
-          <li>Jako żart lub wyzwanie dla znajomych — linkiem albo QR-kodem.</li>
-          <li>Na zdjęciu profilowym — dodaj QR, by każdy mógł zeskanować.</li>
-          <li>Offline — wydrukuj QR i zrób z nim zdjęcie, to buduje wiarygodność (nie wyglądasz jak fejk 😄).</li>
+      <div>
+        <strong>Wskazówki użycia:</strong>
+        <ul style="margin:.4em 0 0 18px">
+          <li>Link możesz wysłać, ale niektóre platformy (np. Tinder) ograniczają zewnętrzne adresy.</li>
+          <li>Wklej <b>QR</b> na swoje zdjęcie profilowe (albo wydrukuj i zrób z nim zdjęcie) — to ułatwia skanowanie i
+              <b>podnosi wiarygodność</b> (nie wyglądasz jak fejk).</li>
+          <li>Chcesz szybko? Dodaj do 4 własnych pytań <b>Tak/Nie</b> — tempo gry rośnie.</li>
         </ul>
       </div>
 
-      <!-- Prywatność -->
-      <div style="margin-top:8px">
+      <div>
         <strong>Prywatność:</strong>
-        <ul style="margin:6px 0 0 18px">
-          <li><em>Zero serwera</em> — nic nie przechowujemy; wszystko liczy się lokalnie w Twojej przeglądarce.</li>
-          <li>W linku zapisujemy tylko: imię/ksywkę, opcjonalny kontakt i wybory do 5 pytań (by druga osoba mogła zagrać).</li>
-          <li>Nie ma ciasteczek śledzących, analityki ani ukrytych skryptów.</li>
+        <ul style="margin:.4em 0 0 18px">
+          <li><b>Zero serwera</b> — nic nie przechowujemy; wszystko liczy się lokalnie w Twojej przeglądarce.</li>
+          <li>W linku jest tylko to, co potrzebne do gry (imię, opcjonalny kontakt, zestaw pytań i odpowiedzi autora).</li>
+          <li>Brak analityki, ciasteczek śledzących, ukrytych skryptów.</li>
         </ul>
       </div>
 
-      <!-- Praktyczne wskazówki -->
-      <div style="margin-top:8px">
-        <strong>Praktyczne wskazówki:</strong>
-        <ul style="margin:6px 0 0 18px">
-          <li>Możesz <em>wysłać link</em>, ale pamiętaj: niektóre platformy (np. Tinder) ograniczają zewnętrzne adresy.</li>
-          <li>Najprościej: <em>wstaw QR</em> (generowany tutaj) na swoje zdjęcie — łatwo go zeskanować.</li>
-          <li>Lub <em>wydrukuj QR</em> i zrób z nim zdjęcie — szybki sposób, by się wyróżnić i potwierdzić wiarygodność.</li>
-        </ul>
-      </div>
-
-      <!-- Zasady -->
-      <div style="margin-top:8px">
-        <strong>Zasady:</strong> na luzie, bez spamu; jeśli ktoś nie chce grać — szanuj to.
-      </div>
-
-      <!-- Jeden przycisk pomocy -->
-      <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap">
+      <div style="display:flex; gap:10px; margin-top:8px; flex-wrap:wrap">
         <button class="btn" id="aboutShare">Jak wstawić QR na zdjęcie?</button>
       </div>
 
-      <!-- Tip o jakości QR -->
-      <div class="muted" style="margin-top:10px; font-size:13px">
-        <em>Tip:</em> jeśli chcesz wydrukować QR w dobrej jakości, pobierz PNG 1000×1000 z przycisku
-        „Pobierz QR PNG” w kreatorze — ma biały margines i dobrze trzyma się na zdjęciu/wydruku.
+      <div class="muted" style="margin-top:2px; font-size:13px">
+        <em>Tip:</em> pobierz QR 1000×1000 („Pobierz QR PNG”) — ma biały margines i dobrze wygląda na zdjęciu/wydruku.
       </div>
     </div>
   </div>
 </div>
 
 <script>
-/* Podpięcie akcji w modalu „O co chodzi?” */
+/* Modal handlers */
 (function(){
-  const modal  = document.getElementById('aboutModal');
-  const close  = document.getElementById('closeAbout');
-  const help   = document.getElementById('aboutShare');
-
-  if (close) close.onclick = () => modal.classList.remove('show');
-
-  if (help) help.onclick = () => {
-    alert(
-`Jak wstawić QR na zdjęcie?
-
-1) W kreatorze kliknij „Pobierz QR PNG” (plik 1000×1000 z białym marginesem).
-2) Otwórz edytor zdjęć w telefonie (np. systemowy, Canva, PicsArt).
-3) Wklej QR w róg zdjęcia profilowego i zapisz.
-4) Alternatywnie: wydrukuj QR i zrób z nim zdjęcie — to wygląda wiarygodnie i wyróżnia.
-
-Uwaga: niektóre aplikacje (np. Tinder) ograniczają linki — QR zwykle działa bez problemu.`
-    );
-  };
+  const modal = document.getElementById('aboutModal');
+  document.addEventListener('click', e=>{
+    if(e.target && e.target.id==='openAbout') modal.classList.add('show');
+    if(e.target && e.target.id==='closeAbout') modal.classList.remove('show');
+    if(e.target===modal) modal.classList.remove('show');
+    if(e.target && e.target.id==='aboutShare'){
+      alert(
+'Pobierz QR PNG (1000×1000), użyj edytora zdjęć w telefonie i wklej kod w róg fotki.\n\
+Możesz też wydrukować QR i zrobić z nim zdjęcie — to wygląda wiarygodnie i wyróżnia.\n\
+Uwaga: niektóre aplikacje ograniczają linki, ale QR zwykle działa bez problemu.'
+      );
+    }
+  });
 })();
 </script>
 
-
 <script>
-const el = s => document.querySelector(s);
-const app = el('#app');
+/* ====== PYTANIA ====== */
+/* Bazowe – zawsze (3) */
+const BASE_QUESTIONS = [
+  { id:'base-food',   q:'Jesteś bardziej…', a:['Mięsożerca 🥩','Wege 🌱','Flexi 🍳','Fastfood 🍔'] },
+  { id:'base-polit',  q:'Twoje podejście do świata (politycznie/społecznie)…', a:['Lewo ↔️','Środek ⚖️','Prawo 🏛','Nie wiem / bez znaczenia 🤷'] },
+  { id:'base-date',   q:'Idealny pierwszy spot:', a:['Kawa ☕','Spacer 🌳','Kino 🎬','Kolacja 🍝'] },
+];
 
-const QUESTIONS = [
-  {q: 'Koncert czy kino?', a: ['HipHop koncert 🎤','Kino 🎬','Dom i Netflix 📺','Impreza ze znajomymi 🍻']},
-  {q: 'Weekend marzeń to…', a: ['Góry 🏔','Morze 🌊','Miasto nocą 🌃','Chill w lesie 🌲']},
-  {q: 'Co wybierasz na kolację?', a: ['Pizza 🍕','Sushi 🍣','Burger 🍔','Sałatka 🥗']},
-  {q: 'Zwierzak idealny?', a: ['Kot 🐱','Pies 🐶','Papuga 🦜','Żaden, wolę ludzi 😎']},
-  {q: 'Styl życia:', a: ['Ranny ptaszek ☀️','Nocny marek 🌙','Elastycznie 😅','Ciężko powiedzieć 🤔']},
+/* Pula losowa – 24 szt. (w tym 1 pikantne) */
+const RANDOM_POOL = [
+  {id:'r-1', q:'Weekend marzeń:', a:['Góry 🏔','Morze 🌊','Miasto nocą 🌃','Chill w domu 🛋']},
+  {id:'r-2', q:'Poranek czy noc?', a:['Wcześniak ☀️','Nocny marek 🌙','Różnie 🤷','Zależy od pracy 💼']},
+  {id:'r-3', q:'Ulubiona kuchnia:', a:['Włoska 🇮🇹','Azjatycka 🇯🇵','Polska 🇵🇱','Mieszanka świata 🌍']},
+  {id:'r-4', q:'Kawa czy herbata?', a:['Kawa ☕','Herbata 🍵','Yerba 🤠','Woda 💧']},
+  {id:'r-5', q:'Transport w mieście:', a:['Pieszo 🚶‍♀️','Rower 🚴','Auto 🚗','Komunikacja 🚇']},
+  {id:'r-6', q:'Sport a Ty:', a:['Regularnie 💪','Okazjonalnie 🙂','Tylko kibic 🎽','Nie moje 😴']},
+  {id:'r-7', q:'Zwierzaki:', a:['Pies 🐶','Kot 🐱','Mam inne 🐾','Nie teraz 🙅']},
+  {id:'r-8', q:'Praca:', a:['Biuro 🏢','Zdalnie 🏠','Hybryda 🔄','Student 📚']},
+  {id:'r-9', q:'Muzyka w aucie:', a:['Hip-Hop 🎧','Pop 🎤','Rock 🎸','Podcast 🎙']},
+  {id:'r-10',q:'Planszówki czy gry wideo?', a:['Planszówki 🎲','Gry wideo 🎮','Obie 💥','Wolę książki 📚']},
+  {id:'r-11',q:'Wyjazd last minute?', a:['Jasne ✈️','Zależy 💸','Wolę planować 📅','Home sweet home 🏠']},
+  {id:'r-12',q:'Impreza vs. chill:', a:['Klub 🔊','Domówka 🏠','Kolacja 🍷','Netflix 📺']},
+  {id:'r-13',q:'Słodycze:', a:['Czekolada 🍫','Lody 🍨','Ciasto 🍰','Nie jem 🙅']},
+  {id:'r-14',q:'Języki obce:', a:['Angielski 🇬🇧','Niemiecki 🇩🇪','Hiszpański 🇪🇸','Inne 🌐']},
+  {id:'r-15',q:'Podróż idealna:', a:['City break 🏙','Roadtrip 🚗','All inclusive 🏖','Góry i plecak 🎒']},
+  {id:'r-16',q:'Czytasz książki?', a:['Regularnie 📚','Czasem 🙂','Rzadko 😅','Audiobooki 🎧']},
+  {id:'r-17',q:'Seriale:', a:['Kryminalne 🕵️','Komedia 😂','Fantasy 🐉','Dokumenty 🎬']},
+  {id:'r-18',q:'Gotowanie:', a:['Uwielbiam 👨‍🍳','Daję radę 🙂','Wolę zamawiać 📱','Ktoś inny gotuje 😅']},
+  {id:'r-19',q:'Relacje ze znajomymi:', a:['Duża paczka 👥','Kilka bliskich 💬','Rodzina ❤️','Samotny wilk 🐺']},
+  {id:'r-20',q:'Aktywizm/wolontariat:', a:['Działam aktywnie ✊','Wspieram okazjonalnie 🤝','Interesuję się 📰','Raczej nie teraz ⏳']},
+  {id:'r-21',q:'Dzień bez telefonu:', a:['Dam radę ✅','Trudne, ale spróbuję 😅','No way 😬','Tylko na wakacjach 🏝']},
+  {id:'r-22',q:'Domowe zwroty akcji:', a:['Planer 📅','Spontan 💥','Pół na pół ⚖️','Zależy od nastroju 🙂']},
+  {id:'r-23',q:'Pikantnie: tempo w relacji?', a:['Wolno i uważnie 🔑','Iskry od razu 🔥','Różnie 🤷','Nie mówię publicznie 😏']},
+  {id:'r-24',q:'Kontakt z naturą:', a:['Las 🌲','Woda 🌊','Park 🌿','Balkon 🌞']},
 ];
 
 /* ===== utils ===== */
-function encodeState(o){
-  try{
-    return LZString.compressToEncodedURIComponent(JSON.stringify(o));
-  }catch(e){
-    // awaryjnie stary format
-    return btoa(unescape(encodeURIComponent(JSON.stringify(o))));
-  }
-}
+function encodeState(o){ try{ return LZString.compressToEncodedURIComponent(JSON.stringify(o)); }catch(e){ return btoa(unescape(encodeURIComponent(JSON.stringify(o)))) } }
 function decodeState(hash){
   if(!hash) return null;
-  // 1) spróbuj nowy, skompresowany
-  try{
-    const raw = LZString.decompressFromEncodedURIComponent(hash);
-    if (raw) return JSON.parse(raw);
-  }catch(e){}
-  // 2) wstecznie: stary base64
-  try{
-    return JSON.parse(decodeURIComponent(escape(atob(hash))));
-  }catch(e){}
+  try{ const raw=LZString.decompressFromEncodedURIComponent(hash); if(raw) return JSON.parse(raw); }catch(e){}
+  try{ return JSON.parse(decodeURIComponent(escape(atob(hash)))) }catch(e){}
   return null;
 }
-
 function pct(n){ return Math.round(n*100) }
 function escapeHtml(str=''){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])) }
 function escapeAttr(str=''){ return String(str).replace(/"/g,'&quot;') }
 
-/* Walidacja i normalizacja kontaktu + czytelny display */
+/* kontakt: walidacja i normalizacja + display */
 function normalizeContact(raw=''){
   if(!raw) return {ok:false};
   const s = raw.trim();
-
-  // e-mail
-  const emailRe = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-  if (s.toLowerCase().startsWith('mailto:')) {
-    const addr = s.slice(7);
-    if (emailRe.test(addr)) return {ok:true, href:'mailto:'+addr, display:addr};
-    return {ok:false};
-  }
-  if (emailRe.test(s)) return {ok:true, href:'mailto:'+s, display:s};
-
-  // telefon: 9–12 cyfr; + lub 00; spacje/kreski out; tel:
-  const telClean = s.replace(/[\s-]/g,'');
-  if (/^(?:tel:)?(?:(?:\+|00)?\d{9,12})$/i.test(telClean)) {
-    const digits = telClean.replace(/^tel:/i,'');
-    return {ok:true, href:'tel:'+digits, display:digits.replace(/^00/,'+')};
-  }
-
-  // URL – dodaj https jeśli brak
-  let url; try { url = new URL(/^https?:\/\//i.test(s) ? s : 'https://'+s); } catch { return {ok:false}; }
-  const host = url.hostname.replace(/^www\./,'').toLowerCase();
-  const path = url.pathname;
-
-  if (host==='wa.me' || host==='api.whatsapp.com'){ if (/^\/\+?\d{9,12}/.test(path)) return {ok:true, href:url.toString(), display:url.toString()}; return {ok:false}; }
-  if (host==='instagram.com' && /^\/[A-Za-z0-9_.-]+\/?$/.test(path)) return {ok:true, href:url.toString(), display:'instagram.com'+path};
-  if (host==='facebook.com') return {ok:true, href:url.toString(), display:'facebook.com'+path};
-  if (host==='m.me' && /^\/[A-Za-z0-9_.-]+\/?$/.test(path)) return {ok:true, href:url.toString(), display:'m.me'+path};
-  if (host==='messenger.com' && /^\/t\//.test(path)) return {ok:true, href:url.toString(), display:'messenger.com'+path};
-  if ((host==='t.me' || host==='telegram.me') && /^\/[A-Za-z0-9_]{3,}/.test(path)) return {ok:true, href:url.toString(), display:'t.me'+path};
-  if (host==='discord.gg' && /^\/[A-Za-z0-9]+/.test(path)) return {ok:true, href:url.toString(), display:'discord.gg'+path};
-  if (host==='discord.com' && /^\/(users|channels)\//.test(path)) return {ok:true, href:url.toString(), display:'discord.com'+path};
-  if (host==='tiktok.com' && /^\/@[^/]+/.test(path)) return {ok:true, href:url.toString(), display:'tiktok.com'+path};
-  if ((host==='x.com' || host==='twitter.com') && /^\/[A-Za-z0-9_]{1,15}\/?$/.test(path)) return {ok:true, href:url.toString(), display:host+path};
-
+  const emailRe=/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+  if(s.toLowerCase().startsWith('mailto:')){const a=s.slice(7); if(emailRe.test(a)) return {ok:true,href:'mailto:'+a,display:a}; else return {ok:false};}
+  if(emailRe.test(s)) return {ok:true,href:'mailto:'+s,display:s};
+  const telClean=s.replace(/[\s-]/g,''); if(/^(?:tel:)?(?:(?:\+|00)?\d{9,12})$/i.test(telClean)){const d=telClean.replace(/^tel:/i,'');return{ok:true,href:'tel:'+d,display:d.replace(/^00/,'+')}}  
+  let url; try{ url=new URL(/^https?:\/\//i.test(s)?s:'https://'+s);}catch{return{ok:false}}
+  const h=url.hostname.replace(/^www\./,'').toLowerCase(), p=url.pathname;
+  if(h==='wa.me'||h==='api.whatsapp.com'){ if(/^\/\+?\d{9,12}/.test(p)) return {ok:true,href:url.toString(),display:url.toString()}; return {ok:false}; }
+  if(h==='instagram.com' && /^\/[A-Za-z0-9_.-]+\/?$/.test(p)) return {ok:true,href:url.toString(),display:'instagram.com'+p};
+  if(h==='facebook.com') return {ok:true,href:url.toString(),display:'facebook.com'+p};
+  if(h==='m.me' && /^\/[A-Za-z0-9_.-]+\/?$/.test(p)) return {ok:true,href:url.toString(),display:'m.me'+p};
+  if(h==='messenger.com' && /^\/t\//.test(p)) return {ok:true,href:url.toString(),display:'messenger.com'+p};
+  if((h==='t.me'||h==='telegram.me') && /^\/[A-Za-z0-9_]{3,}/.test(p)) return {ok:true,href:url.toString(),display:'t.me'+p};
+  if(h==='discord.gg' && /^\/[A-Za-z0-9]+/.test(p)) return {ok:true,href:url.toString(),display:'discord.gg'+p};
+  if(h==='discord.com' && /^\/(users|channels)\//.test(p)) return {ok:true,href:url.toString(),display:'discord.com'+p};
+  if(h==='tiktok.com' && /^\/@[^/]+/.test(p)) return {ok:true,href:url.toString(),display:'tiktok.com'+p};
+  if((h==='x.com'||h==='twitter.com') && /^\/[A-Za-z0-9_]{1,15}\/?$/.test(p)) return {ok:true,href:url.toString(),display:h+p};
   return {ok:false};
 }
 
-/* Nagłówek: inny dla kreatora i gry */
-function headerBlock(mode = 'creator', name = '') {
-  const isGame = mode === 'game';
-  const title   = isGame ? `Match Quiz <span class="glow">— czy pasujesz do ${escapeHtml(name)}?</span>`
-                         : `Match Quiz <span class="glow">— czy pasujemy?</span>`;
-  const sub     = isGame ? `Wybierz swoje odpowiedzi i zobacz, jak do siebie pasujecie.`
-                         : `Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.`;
-  return `
-    <div class="row" style="justify-content:space-between; align-items:flex-end">
-      <div>
-        <div class="title">${title}</div>
-        <div class="subtitle">${sub}</div>
-        <button class="btn" id="openAbout">O co chodzi?</button>
-      </div>
-    </div>`;
-}
-
-function wireAbout(){
-  const modal = el('#aboutModal');
-  const openBtn = el('#openAbout');
-  const closeBtn = el('#closeAbout');
-  if (openBtn) openBtn.onclick = ()=> modal.classList.add('show');
-  if (closeBtn) closeBtn.onclick = ()=> modal.classList.remove('show');
-  modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('show'); });
+/* Nagłówek */
+function headerBlock(mode='creator', name=''){
+  const isGame = mode==='game';
+  const title = isGame ? `Match Quiz <span class="glow">— czy pasujesz do ${escapeHtml(name)}?</span>` :
+                         `Match Quiz <span class="glow">— czy pasujemy?</span>`;
+  const sub   = isGame ? `Wybierz swoje odpowiedzi i zobacz, jak do siebie pasujecie.` :
+                         `Ustaw swoje preferencje, wygeneruj link i wyślij. Zero spiny, czysta zabawa.`;
+  return `<div class="row" style="justify-content:space-between;align-items:flex-end">
+    <div>
+      <div class="title">${title}</div>
+      <div class="subtitle">${sub}</div>
+      <button class="btn" id="openAbout">O co chodzi?</button>
+    </div>
+  </div>`;
 }
 
 /* Haptics */
-  /* Lekka wibracja 1x – klik opcji */
-function buzz(ms = 12){
-  if (navigator.vibrate) { try{ navigator.vibrate(ms); }catch{} }
-}
+function buzz(ms=12){ if(navigator.vibrate){ try{ navigator.vibrate(ms);}catch{} } }
+function resultBuzz(score){ if(!navigator.vibrate) return; const pulses=Math.max(1,Math.min(6,Math.round(score/17))); const dur=Math.round(15+(score/100)*25); const gap=18; const pattern=[]; for(let i=0;i<pulses;i++){ pattern.push(dur); if(i<pulses-1) pattern.push(gap);} try{navigator.vibrate(pattern);}catch{} }
+function addOptionA11y(scope){ scope.querySelectorAll('.opt').forEach(opt=>{ opt.setAttribute('tabindex','0'); opt.setAttribute('role','button'); opt.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault(); opt.click();}});}); }
 
-/* Wibracje wyniku – moc zależna od % (0–100) */
-function resultBuzz(score){
-  if (!navigator.vibrate) return;
-  // Skaluje liczbę impulsów 1–6 i długość impulsu 15–40 ms
-  const pulses = Math.max(1, Math.min(6, Math.round(score / 17))); // ~0..6
-  const dur    = Math.round(15 + (score/100) * 25);                // 15..40 ms
-  const gap    = 18;                                               // przerwy
-
-  // Zbuduj pattern: [dur, gap, dur, gap, ...]
-  const pattern = [];
-  for(let i=0;i<pulses;i++){ pattern.push(dur); if(i<pulses-1) pattern.push(gap); }
-
-  try{ navigator.vibrate(pattern); }catch{}
-}
-
-
-/* A11y: klawiatura dla opcji */
-function addOptionA11y(scope){
-  scope.querySelectorAll('.opt').forEach(opt=>{
-    opt.setAttribute('tabindex','0');
-    opt.setAttribute('role','button');
-    opt.addEventListener('keydown', e=>{
-      if(e.key==='Enter' || e.key===' '){
-        e.preventDefault(); opt.click();
-      }
-    });
-  });
+/* helper losowania */
+function pickRandom(pool, excludeIds=new Set()){
+  const available = pool.filter(q=>!excludeIds.has(q.id));
+  if(!available.length) return null;
+  return available[Math.floor(Math.random()*available.length)];
 }
 
 /* ========== KREATOR ========== */
-function viewCreator(prefillAnswers=null){
-  app.innerHTML = `
-    <div class="grid" style="gap:18px">
-      ${headerBlock('creator')}
-      <div class="card">
-        <div class="row" style="justify-content:space-between">
-          <div class="pill">TRYB KREATORA</div>
-        </div>
-        <div class="grid" style="gap:14px">
-          <label>
-            <div class="small muted">Twoje imię / ksywka:</div>
-            <input id="name" type="text" placeholder="np. Piotr" />
-          </label>
-          <label>
-            <div class="small muted">Link do kontaktu:</div>
-            <input id="contact" type="url" placeholder="np. tel:+48123456789 / wa.me/48… / nick@domena.pl / instagram.com/nick / x.com/nick" />
-            <div class="hint" id="contactHint"></div>
-          </label>
-        </div>
-      </div>
+function viewCreator(prefill=null){
+  const RANDOM_COUNT = 3;
+  const usedQuestions = [...BASE_QUESTIONS.map(q=>({...q}))];
+  const usedIds = new Set(usedQuestions.map(q=>q.id));
+  for(let i=0;i<RANDOM_COUNT;i++){ const nq=pickRandom(RANDOM_POOL, usedIds); if(nq){ usedQuestions.push({...nq}); usedIds.add(nq.id);} }
 
-      <div class="card">
-        <div class="pill">Twoje odpowiedzi</div>
-        <div class="grid" style="gap:16px">
-          ${QUESTIONS.map((qq, qi)=>`
-            <div>
-              <div class="mono" style="opacity:.9; font-weight:700; margin-bottom:8px">${qi+1}. ${qq.q}</div>
-              <div class="options" data-q="${qi}">
-                ${qq.a.map((txt, ai)=>`<div class="opt" data-a="${ai}">${txt}</div>`).join('')}
-              </div>
-            </div>
-          `).join('')}
+  let customQuestions = [];
+  const answers = []; // indeksy odpowiedzi dla całego zestawu
+
+  function blockQuestion(q, globalIndex, reroll=false){
+    return `
+      <div>
+        <div class="row" style="justify-content:space-between; align-items:baseline">
+          <div class="mono" style="opacity:.9; font-weight:700; margin-bottom:8px">${globalIndex+1}. ${q.q}</div>
+          ${reroll?`<button class="btn small" data-reroll="${globalIndex}" title="Wylosuj inne">🎲 Wylosuj inne</button>`:''}
         </div>
-        <div class="row">
-          <button class="btn primary" id="gen">🔗 Generuj link + QR</button>
-          <button class="btn ghost" id="reset">Wyczyść</button>
+        <div class="options" data-q-index="${globalIndex}">
+          ${q.a.map((txt, ai)=>`<div class="opt" data-a="${ai}">${txt}</div>`).join('')}
+        </div>
+      </div>`;
+  }
+  function customBlock(q, globalIndex){
+    return `
+      <div class="card" style="background:rgba(255,255,255,.03)">
+        <div class="row" style="justify-content:space-between; align-items:baseline">
+          <div class="mono" style="opacity:.9; font-weight:700; margin-bottom:8px">${globalIndex+1}. ${q.q}</div>
+          <button class="btn small" data-del="${globalIndex}" title="Usuń">🗑 Usuń</button>
+        </div>
+        <div class="options" data-q-index="${globalIndex}">
+          ${q.a.map((txt, ai)=>`<div class="opt" data-a="${ai}">${txt}</div>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  function render(){
+    const base = usedQuestions.slice(0, BASE_QUESTIONS.length);
+    const random = usedQuestions.slice(BASE_QUESTIONS.length, BASE_QUESTIONS.length+RANDOM_COUNT);
+    const custom = usedQuestions.slice(BASE_QUESTIONS.length+RANDOM_COUNT);
+
+    app.innerHTML = `
+      <div class="grid" style="gap:18px">
+        ${headerBlock('creator')}
+        <div class="card">
+          <div class="row" style="justify-content:space-between"><div class="pill">TRYB KREATORA</div></div>
+          <div class="grid" style="gap:14px">
+            <label>
+              <div class="small muted">Twoje imię / ksywka:</div>
+              <input id="name" type="text" placeholder="np. Piotr" />
+            </label>
+            <label>
+              <div class="small muted">Link do kontaktu:</div>
+              <input id="contact" type="url" placeholder="np. tel:+48123456789 / wa.me/48… / nick@domena.pl / instagram.com/nick" />
+              <div class="hint" id="contactHint"></div>
+            </label>
+          </div>
         </div>
 
-        <div id="linkBox" class="grid" style="gap:8px; margin-top:12px; display:none">
-          <div class="card url-grid" style="background:transparent; box-shadow:none; border:0; padding:0">
-            <div class="url-col">
-              <input id="shareUrl" type="text" readonly class="mono" style="width:90%" />
-              <div class="url-row">
-                <a class="btn" id="openQuiz" style="margin-top: 10px; width:88%; text-align:center;">Zobacz quiz</a>
-                <button class="btn" id="copy">Kopiuj</button>
-                <button class="btn" id="share" style="display:none">Udostępnij</button>
-              </div>
+        <div class="card">
+          <div class="pill">Pytania bazowe (zawsze)</div>
+          <div class="grid" style="gap:16px">
+            ${base.map((q,qi)=>blockQuestion(q, qi)).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="pill">Pytania losowe</div>
+          <div class="grid" style="gap:16px">
+            ${random.map((q,ri)=>blockQuestion(q, BASE_QUESTIONS.length+ri, true)).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="pill">Twoje własne pytania (Tak/Nie)</div>
+          <div class="grid" style="gap:16px">
+            <div class="row" style="align-items:flex-end">
+              <label style="flex:1">
+                <div class="small muted">Treść pytania:</div>
+                <input id="customText" type="text" placeholder="np. Czy lubisz psy?" />
+              </label>
+              <button class="btn small" id="addCustom">+ Dodaj (max 4)</button>
             </div>
-            <div class="center">
-              <div class="qr-box" id="qrExport"><div id="qrcode"></div></div>
-              <div class="small muted" id="qrCaption"></div>
-              <button class="btn" id="saveqr" style="margin-top:8px">Pobierz QR PNG</button>
+            ${custom.map((q,idx)=>customBlock(q, BASE_QUESTIONS.length+RANDOM_COUNT+idx)).join('')}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <button class="btn primary" id="gen">🔗 Generuj link + QR</button>
+            <button class="btn ghost" id="reset">Wyczyść</button>
+          </div>
+
+          <div id="linkBox" class="grid" style="gap:8px; margin-top:12px; display:none">
+            <div class="card url-grid" style="background:transparent; box-shadow:none; border:0; padding:0">
+              <div class="url-col">
+                <input id="shareUrl" type="text" readonly class="mono" style="width:90%" />
+                <div class="url-row">
+                  <a class="btn" id="openQuiz" style="margin-top:10px; width:88%; text-align:center;">Zobacz quiz</a>
+                  <button class="btn" id="copy">Kopiuj</button>
+                  <button class="btn" id="share" style="display:none">Udostępnij</button>
+                </div>
+              </div>
+              <div class="center">
+                <div class="qr-box" id="qrExport"><div id="qrcode"></div></div>
+                <div class="small muted" id="qrCaption"></div>
+                <button class="btn" id="saveqr" style="margin-top:8px">Pobierz QR PNG</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
 
-  wireAbout();
-
-  const chosen = Array(QUESTIONS.length).fill(null);
-
-  // Prefill wyborów z gry (jeśli są)
-  if (Array.isArray(prefillAnswers) && prefillAnswers.length === QUESTIONS.length){
-    prefillAnswers.forEach((ai, qi)=>{
-      const box = app.querySelector(`.options[data-q="${qi}"]`);
-      if(box){
-        const opt = box.querySelector(`.opt[data-a="${ai}"]`);
-        if(opt){ opt.classList.add('selected'); chosen[qi]=ai; }
-      }
+    // A11y + klik
+    document.querySelectorAll('.options').forEach(box=>{
+      addOptionA11y(box);
+      box.addEventListener('click', e=>{
+        const opt = e.target.closest('.opt'); if(!opt) return;
+        const idx = +box.dataset.qIndex; const ai = +opt.dataset.a;
+        answers[idx] = ai;
+        box.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));
+        opt.classList.add('selected'); buzz();
+      });
     });
-  }
 
-  app.querySelectorAll('.options').forEach(box=>{
-    addOptionA11y(box);
-    box.addEventListener('click', (e)=>{
-      const opt = e.target.closest('.opt'); if(!opt) return;
-      const qi = +box.dataset.q; const ai = +opt.dataset.a;
-      chosen[qi] = ai;
-      box.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));
-      opt.classList.add('selected');
-      buzz();
+    /* 🔁 Przywrócenie zaznaczeń po renderze (losowanie nie kasuje wyborów z innych pytań) */
+    answers.forEach((ai, idx)=>{
+      if (ai == null) return;
+      const box = document.querySelector(`.options[data-q-index="${idx}"]`);
+      const opt = box?.querySelector(`.opt[data-a="${ai}"]`);
+      if (opt) opt.classList.add('selected');
     });
-  });
 
-  el('#reset').onclick = ()=> viewCreator();
-
-  el('#gen').onclick = ()=>{
-    const name = el('#name').value.trim() || 'Autor';
-    const contactRaw = el('#contact').value.trim();
-    let contact = '';
-    const hint = el('#contactHint');
-
-    if (contactRaw){
-      const norm = normalizeContact(contactRaw);
-      if (!norm.ok){
-        hint.textContent = '⚠️ Niedozwolony kontakt. Dozwolone: tel (9–12 cyfr, +/00), WhatsApp, IG, FB/Messenger, Telegram, Discord, TikTok, X/Twitter, e-mail.';
-        hint.style.color = '#ff8888';
-        return;
-      } else {
-        hint.textContent = '';
-        contact = norm.href; // zapisujemy znormalizowany href
-      }
+    // prefill z poprzedniej gry
+    if(Array.isArray(prefill)){
+      prefill.forEach((ai, idx)=>{
+        const box = document.querySelector(`.options[data-q-index="${idx}"]`);
+        if(box){ const opt=box.querySelector(`.opt[data-a="${ai}"]`); if(opt){ opt.classList.add('selected'); answers[idx]=ai; } }
+      });
+      prefill=null;
     }
 
-    if(chosen.some(x=>x===null)){
-      alert('Uzupełnij wszystkie odpowiedzi.');
-      return;
-    }
+    // reroll tylko danego pytania (resetuje wybór TYLKO dla tego)
+    document.querySelectorAll('[data-reroll]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = +btn.dataset.reroll;
+        const currentId = usedQuestions[idx].id;
+        const exclude = new Set(usedQuestions.map(q=>q.id)); exclude.delete(currentId);
+        const n = pickRandom(RANDOM_POOL, exclude);
+        if(!n) return;
+        usedQuestions[idx] = {...n};
+        answers[idx] = null; // reset tylko tego pytania
+        render(); // re-render i przywróć resztę wyborów (blok powyżej)
+      });
+    });
 
-    const payload = {version:1, name, contact, answers: chosen};
-    const hash = encodeState(payload);
-    const url = location.origin + location.pathname + '#' + hash;
-    el('#shareUrl').value = url;
-
-    // QR
-    if(typeof QRCode === 'function'){
-      const qrWrap = el('#qrcode'); qrWrap.innerHTML = '';
-      new QRCode(qrWrap, {text:url, width:240, height:240, colorDark:'#000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M});
-      el('#qrCaption').textContent = 'match-quiz + ' + name;
-    }
-
-    // Przyciski
-    el('#copy').onclick = async ()=>{ try{ await navigator.clipboard.writeText(el('#shareUrl').value); }catch(e){} };
-    el('#openQuiz').onclick = ()=>{ const u = el('#shareUrl').value; if(u) window.open(u, '_blank', 'noopener'); };
-    if (navigator.share){
-      const shareBtn = el('#share'); shareBtn.style.display='inline-block';
-      shareBtn.onclick = ()=> navigator.share({title:'Match Quiz', text:`Zagraj ze mną: ${name}`, url});
-    }
-
-    el('#saveqr').onclick = ()=>{
-      const CANVAS_SIZE = 1000, SCALE = 0.85;
-      const QR_SIZE = Math.round(CANVAS_SIZE*SCALE);
-      const OFFSET = Math.round((CANVAS_SIZE-QR_SIZE)/2);
-
-      const canvas = document.createElement('canvas');
-      canvas.width = CANVAS_SIZE; canvas.height = CANVAS_SIZE;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = false;
-      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
-
-      const tmp = document.createElement('div'); tmp.style.position='absolute'; tmp.style.left='-9999px';
-      document.body.appendChild(tmp);
-      new QRCode(tmp, {text:url, width:QR_SIZE, height:QR_SIZE, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.M});
-      const qrCanvas = tmp.querySelector('canvas');
-      if(qrCanvas) ctx.drawImage(qrCanvas, OFFSET, OFFSET);
-      document.body.removeChild(tmp);
-
-      const outName = (el('#name').value.trim() || 'Autor');
-      ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.font='40px monospace';
-      ctx.fillText('match-quiz + ' + outName, CANVAS_SIZE/2, CANVAS_SIZE-20);
-
-      const a=document.createElement('a'); a.download='match-quiz.png'; a.href=canvas.toDataURL('image/png'); a.click();
+    // własne Tak/Nie
+    document.getElementById('addCustom').onclick = ()=>{
+      const input = document.getElementById('customText');
+      const text = (input.value||'').trim();
+      if(!text) return;
+      const existingCustom = usedQuestions.filter(q=>q.id.startsWith('c-')).length;
+      if(existingCustom>=4){ alert('Maksymalnie 4 własne pytania.'); return; }
+      const q = { id:'c-'+(Date.now()+Math.random()).toString(36).slice(2), q:text, a:['Tak ✅','Nie ❌'] };
+      usedQuestions.push(q);
+      answers.push(null);
+      input.value='';
+      render();
     };
+    document.querySelectorAll('[data-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = +btn.dataset.del;
+        usedQuestions.splice(idx,1);
+        answers.splice(idx,1);
+        render();
+      });
+    });
 
-    el('#linkBox').style.display='grid';
-  };
+    document.getElementById('reset').onclick = ()=> viewCreator();
+
+    // generuj link/QR
+    document.getElementById('gen').onclick = ()=>{
+      const name = (document.getElementById('name').value||'').trim() || 'Autor';
+      const contactRaw = (document.getElementById('contact').value||'').trim();
+      let contact = ''; const hint = document.getElementById('contactHint');
+
+      if(contactRaw){
+        const norm = normalizeContact(contactRaw);
+        if(!norm.ok){ hint.textContent='⚠️ Niedozwolony kontakt. Dozwolone: tel (9–12 cyfr), WhatsApp, IG, FB/Messenger, Telegram, Discord, TikTok, X/Twitter, e-mail.'; hint.style.color='#ff8888'; return; }
+        hint.textContent=''; contact = norm.href;
+      }
+
+      if(answers.some(x=>x==null)){ alert('Uzupełnij wszystkie odpowiedzi.'); return; }
+
+      const payload = {version:2, name, contact, questions: usedQuestions, answers};
+      const hash = encodeState(payload);
+      const url = location.origin + location.pathname + '#' + hash;
+      document.getElementById('shareUrl').value = url;
+
+      if(typeof QRCode==='function'){
+        const box=document.getElementById('qrcode'); box.innerHTML='';
+        new QRCode(box,{text:url,width:240,height:240,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+        document.getElementById('qrCaption').textContent='match-quiz + '+name;
+      }
+
+      document.getElementById('copy').onclick = async()=>{ try{ await navigator.clipboard.writeText(url);}catch{} };
+      document.getElementById('openQuiz').onclick = ()=> window.open(url,'_blank','noopener');
+      if(navigator.share){ const s=document.getElementById('share'); s.style.display='inline-block'; s.onclick=()=>navigator.share({title:'Match Quiz',text:`Zagraj ze mną: ${name}`,url}); }
+
+      document.getElementById('saveqr').onclick = ()=>{
+        const CANVAS_SIZE=1000, SCALE=.85, QR_SIZE=Math.round(CANVAS_SIZE*SCALE), OFFSET=Math.round((CANVAS_SIZE-QR_SIZE)/2);
+        const canvas=document.createElement('canvas'); canvas.width=CANVAS_SIZE; canvas.height=CANVAS_SIZE;
+        const ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false; ctx.fillStyle='#fff'; ctx.fillRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
+        const tmp=document.createElement('div'); tmp.style.position='absolute'; tmp.style.left='-9999px'; document.body.appendChild(tmp);
+        new QRCode(tmp,{text:url,width:QR_SIZE,height:QR_SIZE,colorDark:'#000',colorLight:'#fff',correctLevel:QRCode.CorrectLevel.M});
+        const qrCanvas=tmp.querySelector('canvas'); if(qrCanvas) ctx.drawImage(qrCanvas,OFFSET,OFFSET); document.body.removeChild(tmp);
+        ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.font='40px monospace'; ctx.fillText('match-quiz + '+name, CANVAS_SIZE/2, CANVAS_SIZE-20);
+        const a=document.createElement('a'); a.download='match-quiz.png'; a.href=canvas.toDataURL('image/png'); a.click();
+      };
+
+      document.getElementById('linkBox').style.display='grid';
+    };
+  } // render
+
+  render();
 }
 
 /* ========== GRA ========== */
+function headerBlockGame(name){
+  return headerBlock('game', name);
+}
+
 function viewGame(data){
+  let questions = data.questions;
+  if(!Array.isArray(questions) || !questions.length){
+    // wsteczna kompatybilność (stare linki v1)
+    questions = [
+      {q:'Koncert czy kino?', a:['HipHop koncert 🎤','Kino 🎬','Dom i Netflix 📺','Impreza ze znajomymi 🍻']},
+      {q:'Weekend marzeń to…', a:['Góry 🏔','Morze 🌊','Miasto nocą 🌃','Chill w lesie 🌲']},
+      {q:'Co wybierasz na kolację?', a:['Pizza 🍕','Sushi 🍣','Burger 🍔','Sałatka 🥗']},
+      {q:'Zwierzak idealny?', a:['Kot 🐱','Pies 🐶','Papuga 🦜','Żaden, wolę ludzi 😎']},
+      {q:'Styl życia:', a:['Ranny ptaszek ☀️','Nocny marek 🌙','Elastycznie 😅','Ciężko powiedzieć 🤔']},
+    ];
+  }
+
   const name = data.name || 'Autor';
   let step = 0;
-  const picked = Array(QUESTIONS.length).fill(null);
+  const picked = Array(questions.length).fill(null);
 
-  const render = ()=>{
-    const q = QUESTIONS[step];
+  function render(){
+    const q = questions[step];
     app.innerHTML = `
       <div class="grid" style="gap:18px">
-        ${headerBlock('game', name)}
+        ${headerBlockGame(name)}
         <div class="card">
-          <div class="mono" style="opacity:.9; font-weight:800; font-size:18px; margin-bottom:8px">${step+1}. ${q.q}</div>
+          <div class="mono" style="opacity:.9; font-weight:800; font-size:18px; margin-bottom:8px">${step+1}. ${escapeHtml(q.q)}</div>
           <div class="options" data-q="${step}">
             ${q.a.map((t,i)=>`<div class="opt" data-a="${i}">${t}</div>`).join('')}
           </div>
           <div class="row" style="margin-top:12px">
             <button class="btn" id="back" ${step===0?'disabled style="opacity:.4;cursor:not-allowed"':''}>Wstecz</button>
             <div style="flex:1"></div>
-            <button class="btn primary" id="next">${step===QUESTIONS.length-1?'Pokaż wynik':'Dalej →'}</button>
+            <button class="btn primary" id="next">${step===questions.length-1?'Pokaż wynik':'Dalej →'}</button>
           </div>
         </div>
         <div class="center muted small">Grasz o: <span class="glow">${escapeHtml(name)}</span></div>
       </div>`;
-
-    wireAbout();
     addOptionA11y(app);
-
     app.querySelector('.options').addEventListener('click', e=>{
-      const o = e.target.closest('.opt'); if(!o) return;
-      picked[step] = +o.dataset.a;
+      const o=e.target.closest('.opt'); if(!o) return;
+      picked[step]=+o.dataset.a;
       app.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));
-      o.classList.add('selected');
-      buzz();
+      o.classList.add('selected'); buzz();
     });
-    el('#back')?.addEventListener('click', ()=>{ if(step>0){ step--; render(); } });
-    el('#next').addEventListener('click', ()=>{
-      if(picked[step]===null){ alert('Zaznacz odpowiedź.'); return; }
-      if(step<QUESTIONS.length-1){ step++; render(); } else { showResult(); }
-    });
-  };
+    document.getElementById('back')?.addEventListener('click', ()=>{ if(step>0){step--; render();} });
+    document.getElementById('next').addEventListener('click', ()=>{ if(picked[step]==null){alert('Zaznacz odpowiedź.');return;} if(step<questions.length-1){step++; render();} else { showResult(); } });
+  }
 
-  const showResult = ()=>{
-    
-    let matches=0;
-    for(let i=0;i<QUESTIONS.length;i++){ if((data.answers||[])[i]===picked[i]) matches++; }
-    const score = pct(matches/QUESTIONS.length);
-    const normContact = normalizeContact(data.contact || '');
-    const contactBtn  = normContact.ok ? `<a class="btn primary" href="${escapeAttr(normContact.href)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>` : '';
-    const contactText = normContact.ok ? `<div class="muted" style="margin-top:8px; user-select:all;">Kontakt: ${escapeHtml(normContact.display || normContact.href)}</div>` : '';
+  function showResult(){
+    let matches=0; const theirs=data.answers||[];
+    for(let i=0;i<questions.length;i++){ if(theirs[i]===picked[i]) matches++; }
+    const score=pct(matches/questions.length);
+    const norm = normalizeContact(data.contact||'');
+    const contactBtn = norm.ok ? `<a class="btn primary" href="${escapeAttr(norm.href)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>` : '';
+    const contactText = norm.ok ? `<div class="muted" style="margin-top:8px; user-select:all;">Kontakt: ${escapeHtml(norm.display||norm.href)}</div>` : '';
+
     app.innerHTML = `
       <div class="grid" style="gap:18px">
-        ${headerBlock('game', name)}
+        ${headerBlockGame(name)}
         <div class="card center">
           <div class="mono glow" style="font-size:56px; font-weight:900">${score}%</div>
           <div class="grid" style="gap:10px; margin-top:12px">
-            ${QUESTIONS.map((qq,i)=>{
-              const ok = (data.answers||[])[i]===picked[i];
-              const you = qq.a[(data.answers||[])[i]];
-              const her = qq.a[picked[i]];
-              return `<div class="row small mono"><div style="width:20px">${i+1}.</div>
-                <div class="muted">${qq.q}</div>
-                <div class="mono" style="margin-left:6px">
-                  <span style="color:${ok?'var(--ok)':'var(--bad)'}">${ok?'✔︎ Zgodne':'✖︎ Różne'}</span>
-                  <span class="muted"> — Ty: ${escapeHtml(her)} | ${escapeHtml(name)}: ${escapeHtml(you)}</span>
-                </div></div>`;
-            }).join('')}
+            ${questions.map((qq,i)=>{const ok=(theirs[i]===picked[i]); const you=qq.a[theirs[i]]; const her=qq.a[picked[i]]; return `<div class="row small mono"><div style="width:20px">${i+1}.</div><div class="muted">${escapeHtml(qq.q)}</div><div class="mono" style="margin-left:6px"><span style="color:${ok?'var(--ok)':'var(--bad)'}">${ok?'✔︎ Zgodne':'✖︎ Różne'}</span><span class="muted"> — Ty: ${escapeHtml(her)} | ${escapeHtml(name)}: ${escapeHtml(you)}</span></div></div>`}).join('')}
           </div>
-          <div class="row" style="justify-content:center; margin-top:14px">
-            ${contactBtn}
-          </div>
+          <div class="row" style="justify-content:center; margin-top:14px">${contactBtn}</div>
           ${contactText}
         </div>
-        <div class="center">
-          <a class="btn" id="makeOwn">Stwórz własny quiz</a>
-        </div>
+        <div class="center"><a class="btn" id="makeOwn">Stwórz własny quiz</a></div>
       </div>`;
-    resultBuzz(score); // 🔊 intensywność zależna od wyniku
-    wireAbout();
-
-    // Prefill do kreatora
-    el('#makeOwn').onclick = ()=>{
+    resultBuzz(score);
+    document.getElementById('makeOwn').onclick = ()=>{
       try{ sessionStorage.setItem('prefillAnswers', JSON.stringify(picked)); }catch{}
-      history.replaceState({}, '', location.pathname);
-      viewCreator(picked);
+      history.replaceState({},'',location.pathname); viewCreator(picked);
     };
-  };
-
+  }
   render();
 }
 
-/* ========== START ========== */
+/* ========== INIT ========== */
 (function init(){
-  // Prefill z poprzedniej gry
-  let prefill = null;
-  try{
-    const raw = sessionStorage.getItem('prefillAnswers');
-    if(raw){ prefill = JSON.parse(raw); sessionStorage.removeItem('prefillAnswers'); }
-  }catch{}
-
-  const hash = location.hash.replace(/^#/,'');
+  let prefill=null; try{ const raw=sessionStorage.getItem('prefillAnswers'); if(raw){ prefill=JSON.parse(raw); sessionStorage.removeItem('prefillAnswers'); } }catch{}
+  const hash=location.hash.replace(/^#/,'');
   if(!hash){ viewCreator(prefill); return; }
-  const data = decodeState(hash);
-  if(!data || !Array.isArray(data.answers) || data.answers.length!==QUESTIONS.length){
-    history.replaceState({}, '', location.pathname);
-    viewCreator(prefill); return;
-  }
+  const data=decodeState(hash);
+  if(!data || (!Array.isArray(data.answers) && !Array.isArray(data.questions)) ){ history.replaceState({},'',location.pathname); viewCreator(prefill); return; }
   viewGame(data);
 })();
 
-/* PWA: rejestracja service workera */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
-}
+/* SW (opcjonalnie) */
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 </script>
 </body>
 </html>
