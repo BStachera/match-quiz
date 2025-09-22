@@ -122,11 +122,32 @@ select {
   #qrcode canvas{background:#fff}
 
   /* MODAL – „O co chodzi?” */
-  .modal{position:fixed; inset:0; display:none; place-items:center; background:var(--overlay); z-index:9999}
-  .modal.show{display:grid}
-  .modal .sheet{max-width:780px; width:min(92vw,780px)}
-  .sheet{background:var(--card); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:18px;
-    box-shadow:0 24px 100px rgba(0,0,0,.6)}
+.modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.show { display:flex; }
+
+.modal .sheet {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 18px;
+  width: calc(100% - 10px);   /* po 5px marginesu z lewej i prawej */
+  max-width: 720px;
+  height: 90%;                /* 90% wysokości ekranu */
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;           /* przewijanie gdy treści jest za dużo */
+  box-shadow: 0 12px 40px rgba(0,0,0,.35);
+}
+
 
   /* Motion reduce */
   @media (prefers-reduced-motion: reduce){
@@ -150,24 +171,114 @@ const LZString=(function(){function o(o,r){if(!t[o]){t[o]={};for(let n=0;n<o.len
 
   <div class="wrap" id="app"></div>
 
-  <!-- Modal -->
-  <div class="modal" id="aboutModal" aria-hidden="true">
-    <div class="card sheet">
-      <div class="row" style="justify-content:space-between; align-items:flex-end">
-        <div class="title" style="font-size:28px; margin:0">Dlaczego to powstało?</div>
-        <button class="btn" id="closeAbout">Zamknij</button>
+<!-- Modal -->
+<div class="modal" id="aboutModal" aria-hidden="true">
+  <div class="card sheet" role="dialog" aria-labelledby="aboutTitle" aria-modal="true">
+    <div class="row" style="justify-content:space-between; align-items:flex-end">
+      <div id="aboutTitle" class="title" style="font-size:28px; margin:0">Dlaczego powstał Match Quiz?</div>
+      <button class="btn" id="closeAbout" aria-label="Zamknij okno">Zamknij</button>
+    </div>
+
+    <div class="grid" style="gap:10px; margin-top:12px">
+
+      <!-- Historia / geneza -->
+      <p class="subtitle" style="margin-bottom:6px">
+        <b>Krótka gra = dobry start.</b> Z rozmów ze znajomymi i własnych doświadczeń: pierwsze „hej” bywa niezręczne,
+        a algorytmy nie pomagają przełamać lodów. Chcieliśmy dać coś prostego, wspólnego i lekkiego —
+        stąd pomysł na 5-pytań, które od razu tworzą temat do rozmowy.
+      </p>
+
+      <!-- Dlaczego działa -->
+      <p style="margin:0">
+        Psychologicznie wspólne działanie (tu: mini-gra) obniża barierę, a wynik staje się naturalnym
+        pretekstem: „Serio wolisz sushi od pizzy?” — to brzmi lepiej niż kolejny suchy small talk.
+        To nie test zgodności — to <b>zabawa i pretekst do rozmowy</b>.
+      </p>
+
+      <!-- Jak działa – 3 kroki -->
+      <div style="margin-top:8px">
+        <strong>Jak to działa (3 kroki):</strong>
+        <ol style="margin:6px 0 0 18px">
+          <li>Ustaw imię, opcjonalnie kontakt i odpowiedz na 5 pytań.</li>
+          <li>Wygeneruj link lub QR i wyślij / pokaż.</li>
+          <li>Druga osoba klika, odpowiada i dostajecie procent zgodności.</li>
+        </ol>
       </div>
-      <div class="grid" style="gap:10px; margin-top:8px">
-        <div class="subtitle">Krótka gra dla tych, którzy uważają, że pierwsza rozmowa powinna być… grą.</div>
-        <p>W klasycznych apkach start bywa słaby: „hej”, „co tam?”, cisza. <strong>Match Quiz</strong> odwraca to — zamiast presji na idealny tekst masz <em>mini-grę</em>. Pięć lekkich pytań, szybkie wybory i wynik zgodności. Potem decyzja: gadamy, czy nie.</p>
-        <ul style="margin:0 0 8px 18px">
-          <li><strong>Zero spiny</strong> — 2–3 minuty i gotowe.</li>
-          <li><strong>Równe szanse</strong> — obie osoby klikają.</li>
-          <li><strong>Pretekst do rozmowy</strong> — „serio wolisz sushi od pizzy?”</li>
+
+      <!-- Zastosowania -->
+      <div style="margin-top:8px">
+        <strong>Gdzie się sprawdzi?</strong>
+        <ul style="margin:6px 0 0 18px">
+          <li>Na start w aplikacjach randkowych — szybki, kreatywny icebreaker.</li>
+          <li>Jako żart lub wyzwanie dla znajomych — linkiem albo QR-kodem.</li>
+          <li>Na zdjęciu profilowym — dodaj QR, by każdy mógł zeskanować.</li>
+          <li>Offline — wydrukuj QR i zrób z nim zdjęcie, to buduje wiarygodność (nie wyglądasz jak fejk 😄).</li>
         </ul>
+      </div>
+
+      <!-- Prywatność -->
+      <div style="margin-top:8px">
+        <strong>Prywatność:</strong>
+        <ul style="margin:6px 0 0 18px">
+          <li><em>Zero serwera</em> — nic nie przechowujemy; wszystko liczy się lokalnie w Twojej przeglądarce.</li>
+          <li>W linku zapisujemy tylko: imię/ksywkę, opcjonalny kontakt i wybory do 5 pytań (by druga osoba mogła zagrać).</li>
+          <li>Nie ma ciasteczek śledzących, analityki ani ukrytych skryptów.</li>
+        </ul>
+      </div>
+
+      <!-- Praktyczne wskazówki -->
+      <div style="margin-top:8px">
+        <strong>Praktyczne wskazówki:</strong>
+        <ul style="margin:6px 0 0 18px">
+          <li>Możesz <em>wysłać link</em>, ale pamiętaj: niektóre platformy (np. Tinder) ograniczają zewnętrzne adresy.</li>
+          <li>Najprościej: <em>wstaw QR</em> (generowany tutaj) na swoje zdjęcie — łatwo go zeskanować.</li>
+          <li>Lub <em>wydrukuj QR</em> i zrób z nim zdjęcie — szybki sposób, by się wyróżnić i potwierdzić wiarygodność.</li>
+        </ul>
+      </div>
+
+      <!-- Zasady -->
+      <div style="margin-top:8px">
+        <strong>Zasady:</strong> na luzie, bez spamu; jeśli ktoś nie chce grać — szanuj to.
+      </div>
+
+      <!-- Jeden przycisk pomocy -->
+      <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap">
+        <button class="btn" id="aboutShare">Jak wstawić QR na zdjęcie?</button>
+      </div>
+
+      <!-- Tip o jakości QR -->
+      <div class="muted" style="margin-top:10px; font-size:13px">
+        <em>Tip:</em> jeśli chcesz wydrukować QR w dobrej jakości, pobierz PNG 1000×1000 z przycisku
+        „Pobierz QR PNG” w kreatorze — ma biały margines i dobrze trzyma się na zdjęciu/wydruku.
       </div>
     </div>
   </div>
+</div>
+
+<script>
+/* Podpięcie akcji w modalu „O co chodzi?” */
+(function(){
+  const modal  = document.getElementById('aboutModal');
+  const close  = document.getElementById('closeAbout');
+  const help   = document.getElementById('aboutShare');
+
+  if (close) close.onclick = () => modal.classList.remove('show');
+
+  if (help) help.onclick = () => {
+    alert(
+`Jak wstawić QR na zdjęcie?
+
+1) W kreatorze kliknij „Pobierz QR PNG” (plik 1000×1000 z białym marginesem).
+2) Otwórz edytor zdjęć w telefonie (np. systemowy, Canva, PicsArt).
+3) Wklej QR w róg zdjęcia profilowego i zapisz.
+4) Alternatywnie: wydrukuj QR i zrób z nim zdjęcie — to wygląda wiarygodnie i wyróżnia.
+
+Uwaga: niektóre aplikacje (np. Tinder) ograniczają linki — QR zwykle działa bez problemu.`
+    );
+  };
+})();
+</script>
+
 
 <script>
 const el = s => document.querySelector(s);
