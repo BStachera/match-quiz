@@ -88,7 +88,7 @@
   .mono{font-variant-numeric: tabular-nums}
   .url-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:center}
   .url-row{display:flex; gap:10px; align-items:center}
-  .qr-box{width:280px; aspect-ratio:1/1; background:#fff; padding:10px; border-radius:12px;
+  .qr-box{margin-left: 12px; width:280px; aspect-ratio:1/1; background:#fff; padding:10px; border-radius:12px;
     display:grid; place-items:center; box-shadow:0 6px 30px rgba(0,0,0,.25)}
   #qrcode canvas{background:#fff}
 
@@ -305,7 +305,7 @@ function viewCreator(prefillAnswers=null){
             <div class="url-col">
               <input id="shareUrl" type="text" readonly class="mono" style="width:90%" />
               <div class="url-row">
-                <a class="btn" id="openQuiz" style="width:100%; text-align:center;">Zobacz quiz</a>
+                <a class="btn" id="openQuiz" style="margin-top: 10px; width:88%; text-align:center;">Zobacz quiz</a>
                 <button class="btn" id="copy">Kopiuj</button>
                 <button class="btn" id="share" style="display:none">Udostępnij</button>
               </div>
