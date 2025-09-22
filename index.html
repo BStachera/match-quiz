@@ -57,6 +57,10 @@ select {
   }
   html, body { background-color:#0b0f1a; min-height:100%; }
   body{
+      padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
     margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     color:var(--txt);
     background:
