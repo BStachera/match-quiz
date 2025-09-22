@@ -275,7 +275,26 @@ function wireAbout(){
 }
 
 /* Haptics */
-function buzz(ms=12){ if (navigator.vibrate) try{ navigator.vibrate(ms);}catch{} }
+  /* Lekka wibracja 1x – klik opcji */
+function buzz(ms = 12){
+  if (navigator.vibrate) { try{ navigator.vibrate(ms); }catch{} }
+}
+
+/* Wibracje wyniku – moc zależna od % (0–100) */
+function resultBuzz(score){
+  if (!navigator.vibrate) return;
+  // Skaluje liczbę impulsów 1–6 i długość impulsu 15–40 ms
+  const pulses = Math.max(1, Math.min(6, Math.round(score / 17))); // ~0..6
+  const dur    = Math.round(15 + (score/100) * 25);                // 15..40 ms
+  const gap    = 18;                                               // przerwy
+
+  // Zbuduj pattern: [dur, gap, dur, gap, ...]
+  const pattern = [];
+  for(let i=0;i<pulses;i++){ pattern.push(dur); if(i<pulses-1) pattern.push(gap); }
+
+  try{ navigator.vibrate(pattern); }catch{}
+}
+
 
 /* A11y: klawiatura dla opcji */
 function addOptionA11y(scope){
@@ -493,13 +512,13 @@ function viewGame(data){
   };
 
   const showResult = ()=>{
+    
     let matches=0;
     for(let i=0;i<QUESTIONS.length;i++){ if((data.answers||[])[i]===picked[i]) matches++; }
     const score = pct(matches/QUESTIONS.length);
     const normContact = normalizeContact(data.contact || '');
     const contactBtn  = normContact.ok ? `<a class="btn primary" href="${escapeAttr(normContact.href)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>` : '';
     const contactText = normContact.ok ? `<div class="muted" style="margin-top:8px; user-select:all;">Kontakt: ${escapeHtml(normContact.display || normContact.href)}</div>` : '';
-
     app.innerHTML = `
       <div class="grid" style="gap:18px">
         ${headerBlock('game', name)}
@@ -527,7 +546,7 @@ function viewGame(data){
           <a class="btn" id="makeOwn">Stwórz własny quiz</a>
         </div>
       </div>`;
-
+    resultBuzz(score); // 🔊 intensywność zależna od wyniku
     wireAbout();
 
     // Prefill do kreatora
