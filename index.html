@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Match Quiz — czy pasujemy?</title>
 <meta name="description" content="Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.">
-
 <!-- Kolory przeglądarek / pasków -->
 <meta name="theme-color" content="#0b0f1a" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#0f1629" media="(prefers-color-scheme: light)">
@@ -13,6 +12,19 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="color-scheme" content="dark light">
+<!-- Ikony -->
+<link rel="icon" type="image/png" href="favicon.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="site.webmanifest">
+<!-- Open Graph / Twitter -->
+<meta property="og:title" content="Match Quiz — zagraj ze mną!" />
+<meta property="og:description" content="5 pytań, wyniki zgodności i zero spiny. Sprawdźmy, czy pasujemy 💫" />
+<meta property="og:image" content="icon.png" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<!-- CSP (bezpieczeństwo) -->
+<meta http-equiv="Content-Security-Policy"
+  content="default-src 'self'; img-src 'self' data:; media-src 'none'; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'none'; base-uri 'none'; form-action 'none'">
 
 <style>
   :root{
@@ -35,9 +47,7 @@
   }
   /* Stałe tło (fix białych „rogów” w Safari) */
   body::before{
-    content:"";
-    position: fixed; inset: 0;
-    z-index: -1; pointer-events: none;
+    content:""; position: fixed; inset: 0; z-index:-1; pointer-events:none;
     background:
       radial-gradient(1200px 800px at 20% 10%, #111936 0%, transparent 60%),
       radial-gradient(1000px 800px at 80% 80%, #1a1033 0%, transparent 55%),
@@ -68,9 +78,10 @@
   .pill{display:inline-block; width:auto; max-width:max-content; padding:6px 10px; border-radius:999px;
     background:rgba(0,229,255,.12); font-size:13px}
   .options{display:grid; gap:10px; grid-template-columns: repeat(auto-fit, minmax(200px,1fr))}
-  .opt{padding:12px; border-radius:14px; background:#0b1222; border:1px solid rgba(255,255,255,.10); cursor:pointer}
+  .opt{padding:12px; border-radius:14px; background:#0b1222; border:1px solid rgba(255,255,255,.10); cursor:pointer; outline:none}
   .opt:hover{border-color: var(--accent)}
   .opt.selected{border-color: var(--neon2); box-shadow:0 0 16px rgba(255,58,242,.35)}
+  .opt:focus{box-shadow:0 0 0 3px rgba(0,229,255,.35), 0 0 0 1px rgba(255,255,255,.2) inset}
   .center{text-align:center}
   .muted{opacity:.75}
   .glow{color:var(--neon1); text-shadow:0 0 14px var(--neon1)}
@@ -88,6 +99,10 @@
   .sheet{background:var(--card); border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:18px;
     box-shadow:0 24px 100px rgba(0,0,0,.6)}
 
+  /* Motion reduce */
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important; animation:none!important}
+  }
   @media (max-width:700px){
     .wrap{padding:16px}
     .options{grid-template-columns:1fr}
@@ -142,21 +157,18 @@ function escapeAttr(str=''){ return String(str).replace(/"/g,'&quot;') }
 /* Walidacja i normalizacja kontaktu + czytelny display */
 function normalizeContact(raw=''){
   if(!raw) return {ok:false};
-
   const s = raw.trim();
 
-  // e-mail (mailto: lub goły)
+  // e-mail
   const emailRe = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
   if (s.toLowerCase().startsWith('mailto:')) {
     const addr = s.slice(7);
     if (emailRe.test(addr)) return {ok:true, href:'mailto:'+addr, display:addr};
     return {ok:false};
   }
-  if (emailRe.test(s)) {
-    return {ok:true, href:'mailto:'+s, display:s};
-  }
+  if (emailRe.test(s)) return {ok:true, href:'mailto:'+s, display:s};
 
-  // telefon: 9–12 cyfr, opcjonalnie + lub 00; spacje/kreski ignorujemy; akceptujemy też tel:
+  // telefon: 9–12 cyfr; + lub 00; spacje/kreski out; tel:
   const telClean = s.replace(/[\s-]/g,'');
   if (/^(?:tel:)?(?:(?:\+|00)?\d{9,12})$/i.test(telClean)) {
     const digits = telClean.replace(/^tel:/i,'');
@@ -164,45 +176,20 @@ function normalizeContact(raw=''){
   }
 
   // URL – dodaj https jeśli brak
-  let url;
-  try { url = new URL(/^https?:\/\//i.test(s) ? s : 'https://'+s); }
-  catch { return {ok:false}; }
-
+  let url; try { url = new URL(/^https?:\/\//i.test(s) ? s : 'https://'+s); } catch { return {ok:false}; }
   const host = url.hostname.replace(/^www\./,'').toLowerCase();
   const path = url.pathname;
 
-  // WhatsApp
-  if (host==='wa.me' || host==='api.whatsapp.com'){
-    if (/^\/\+?\d{9,12}/.test(path)) return {ok:true, href:url.toString(), display:url.toString()};
-    return {ok:false};
-  }
-
-  // Instagram
-  if (host==='instagram.com' && /^\/[A-Za-z0-9_.-]+\/?$/.test(path))
-    return {ok:true, href:url.toString(), display:'instagram.com'+path};
-
-  // Facebook / Messenger
+  if (host==='wa.me' || host==='api.whatsapp.com'){ if (/^\/\+?\d{9,12}/.test(path)) return {ok:true, href:url.toString(), display:url.toString()}; return {ok:false}; }
+  if (host==='instagram.com' && /^\/[A-Za-z0-9_.-]+\/?$/.test(path)) return {ok:true, href:url.toString(), display:'instagram.com'+path};
   if (host==='facebook.com') return {ok:true, href:url.toString(), display:'facebook.com'+path};
   if (host==='m.me' && /^\/[A-Za-z0-9_.-]+\/?$/.test(path)) return {ok:true, href:url.toString(), display:'m.me'+path};
-  if (host==='messenger.com' && /^\/t\//.test(path))  return {ok:true, href:url.toString(), display:'messenger.com'+path};
-
-  // Telegram
-  if ((host==='t.me' || host==='telegram.me') && /^\/[A-Za-z0-9_]{3,}/.test(path))
-    return {ok:true, href:url.toString(), display:'t.me'+path};
-
-  // Discord
-  if (host==='discord.gg' && /^\/[A-Za-z0-9]+/.test(path))
-    return {ok:true, href:url.toString(), display:'discord.gg'+path};
-  if (host==='discord.com' && /^\/(users|channels)\//.test(path))
-    return {ok:true, href:url.toString(), display:'discord.com'+path};
-
-  // TikTok
-  if (host==='tiktok.com' && /^\/@[^/]+/.test(path))
-    return {ok:true, href:url.toString(), display:'tiktok.com'+path};
-
-  // X / Twitter
-  if ((host==='x.com' || host==='twitter.com') && /^\/[A-Za-z0-9_]{1,15}\/?$/.test(path))
-    return {ok:true, href:url.toString(), display:host+path};
+  if (host==='messenger.com' && /^\/t\//.test(path)) return {ok:true, href:url.toString(), display:'messenger.com'+path};
+  if ((host==='t.me' || host==='telegram.me') && /^\/[A-Za-z0-9_]{3,}/.test(path)) return {ok:true, href:url.toString(), display:'t.me'+path};
+  if (host==='discord.gg' && /^\/[A-Za-z0-9]+/.test(path)) return {ok:true, href:url.toString(), display:'discord.gg'+path};
+  if (host==='discord.com' && /^\/(users|channels)\//.test(path)) return {ok:true, href:url.toString(), display:'discord.com'+path};
+  if (host==='tiktok.com' && /^\/@[^/]+/.test(path)) return {ok:true, href:url.toString(), display:'tiktok.com'+path};
+  if ((host==='x.com' || host==='twitter.com') && /^\/[A-Za-z0-9_]{1,15}\/?$/.test(path)) return {ok:true, href:url.toString(), display:host+path};
 
   return {ok:false};
 }
@@ -214,7 +201,6 @@ function headerBlock(mode = 'creator', name = '') {
                          : `Match Quiz <span class="glow">— czy pasujemy?</span>`;
   const sub     = isGame ? `Wybierz swoje odpowiedzi i zobacz, jak do siebie pasujecie.`
                          : `Ustaw swoje preferencje, wygeneruj link i wyślij. Ona odpowie na 5 pytań, a system policzy zgodność. Zero spiny, czysta zabawa.`;
-
   return `
     <div class="row" style="justify-content:space-between; align-items:flex-end">
       <div>
@@ -232,6 +218,22 @@ function wireAbout(){
   if (openBtn) openBtn.onclick = ()=> modal.classList.add('show');
   if (closeBtn) closeBtn.onclick = ()=> modal.classList.remove('show');
   modal.addEventListener('click', e => { if(e.target === modal) modal.classList.remove('show'); });
+}
+
+/* Haptics */
+function buzz(ms=12){ if (navigator.vibrate) try{ navigator.vibrate(ms);}catch{} }
+
+/* A11y: klawiatura dla opcji */
+function addOptionA11y(scope){
+  scope.querySelectorAll('.opt').forEach(opt=>{
+    opt.setAttribute('tabindex','0');
+    opt.setAttribute('role','button');
+    opt.addEventListener('keydown', e=>{
+      if(e.key==='Enter' || e.key===' '){
+        e.preventDefault(); opt.click();
+      }
+    });
+  });
 }
 
 /* ========== KREATOR ========== */
@@ -278,8 +280,9 @@ function viewCreator(prefillAnswers=null){
             <div class="url-col">
               <input id="shareUrl" type="text" readonly class="mono" style="width:90%" />
               <div class="url-row">
-                <a class="btn" id="openQuiz" style="width:90%; text-align:center;">Zobacz quiz</a>
+                <a class="btn" id="openQuiz" style="width:100%; text-align:center;">Zobacz quiz</a>
                 <button class="btn" id="copy">Kopiuj</button>
+                <button class="btn" id="share" style="display:none">Udostępnij</button>
               </div>
             </div>
             <div class="center">
@@ -308,12 +311,14 @@ function viewCreator(prefillAnswers=null){
   }
 
   app.querySelectorAll('.options').forEach(box=>{
+    addOptionA11y(box);
     box.addEventListener('click', (e)=>{
       const opt = e.target.closest('.opt'); if(!opt) return;
       const qi = +box.dataset.q; const ai = +opt.dataset.a;
       chosen[qi] = ai;
       box.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));
       opt.classList.add('selected');
+      buzz();
     });
   });
 
@@ -328,9 +333,9 @@ function viewCreator(prefillAnswers=null){
     if (contactRaw){
       const norm = normalizeContact(contactRaw);
       if (!norm.ok){
-        hint.textContent = '⚠️ Niedozwolony kontakt. Dozwolone: tel (9–12 cyfr, +/00 opcjonalnie), WhatsApp, Instagram, Facebook/Messenger, Telegram, Discord, TikTok, X/Twitter, e-mail.';
+        hint.textContent = '⚠️ Niedozwolony kontakt. Dozwolone: tel (9–12 cyfr, +/00), WhatsApp, IG, FB/Messenger, Telegram, Discord, TikTok, X/Twitter, e-mail.';
         hint.style.color = '#ff8888';
-        return; // blokujemy generowanie
+        return;
       } else {
         hint.textContent = '';
         contact = norm.href; // zapisujemy znormalizowany href
@@ -347,14 +352,20 @@ function viewCreator(prefillAnswers=null){
     const url = location.origin + location.pathname + '#' + hash;
     el('#shareUrl').value = url;
 
+    // QR
     if(typeof QRCode === 'function'){
       const qrWrap = el('#qrcode'); qrWrap.innerHTML = '';
       new QRCode(qrWrap, {text:url, width:240, height:240, colorDark:'#000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M});
       el('#qrCaption').textContent = 'match-quiz + ' + name;
     }
 
+    // Przyciski
     el('#copy').onclick = async ()=>{ try{ await navigator.clipboard.writeText(el('#shareUrl').value); }catch(e){} };
-    el('#openQuiz').onclick = ()=>{ const u = el('#shareUrl').value; if(u) window.open(u, '_blank'); };
+    el('#openQuiz').onclick = ()=>{ const u = el('#shareUrl').value; if(u) window.open(u, '_blank', 'noopener'); };
+    if (navigator.share){
+      const shareBtn = el('#share'); shareBtn.style.display='inline-block';
+      shareBtn.onclick = ()=> navigator.share({title:'Match Quiz', text:`Zagraj ze mną: ${name}`, url});
+    }
 
     el('#saveqr').onclick = ()=>{
       const CANVAS_SIZE = 1000, SCALE = 0.85;
@@ -367,9 +378,7 @@ function viewCreator(prefillAnswers=null){
       ctx.imageSmoothingEnabled = false;
       ctx.fillStyle = '#fff'; ctx.fillRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
 
-      // Ostry QR off-screen
-      const tmp = document.createElement('div');
-      tmp.style.position='absolute'; tmp.style.left='-9999px';
+      const tmp = document.createElement('div'); tmp.style.position='absolute'; tmp.style.left='-9999px';
       document.body.appendChild(tmp);
       new QRCode(tmp, {text:url, width:QR_SIZE, height:QR_SIZE, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.M});
       const qrCanvas = tmp.querySelector('canvas');
@@ -413,12 +422,14 @@ function viewGame(data){
       </div>`;
 
     wireAbout();
+    addOptionA11y(app);
 
     app.querySelector('.options').addEventListener('click', e=>{
       const o = e.target.closest('.opt'); if(!o) return;
       picked[step] = +o.dataset.a;
       app.querySelectorAll('.opt').forEach(x=>x.classList.remove('selected'));
       o.classList.add('selected');
+      buzz();
     });
     el('#back')?.addEventListener('click', ()=>{ if(step>0){ step--; render(); } });
     el('#next').addEventListener('click', ()=>{
@@ -432,12 +443,8 @@ function viewGame(data){
     for(let i=0;i<QUESTIONS.length;i++){ if((data.answers||[])[i]===picked[i]) matches++; }
     const score = pct(matches/QUESTIONS.length);
     const normContact = normalizeContact(data.contact || '');
-    const contactBtn = normContact.ok
-      ? `<a class="btn primary" href="${escapeAttr(normContact.href)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>`
-      : '';
-    const contactText = normContact.ok
-      ? `<div class="muted" style="margin-top:8px; user-select:all;">Kontakt: ${escapeHtml(normContact.display || normContact.href)}</div>`
-      : '';
+    const contactBtn  = normContact.ok ? `<a class="btn primary" href="${escapeAttr(normContact.href)}" target="_blank" rel="noopener">💬 Napisz do ${escapeHtml(name)}</a>` : '';
+    const contactText = normContact.ok ? `<div class="muted" style="margin-top:8px; user-select:all;">Kontakt: ${escapeHtml(normContact.display || normContact.href)}</div>` : '';
 
     app.innerHTML = `
       <div class="grid" style="gap:18px">
@@ -469,10 +476,10 @@ function viewGame(data){
 
     wireAbout();
 
-    // Przeniesienie odpowiedzi do kreatora (prefill)
+    // Prefill do kreatora
     el('#makeOwn').onclick = ()=>{
       try{ sessionStorage.setItem('prefillAnswers', JSON.stringify(picked)); }catch{}
-      history.replaceState({}, '', location.pathname); // usuń hash
+      history.replaceState({}, '', location.pathname);
       viewCreator(picked);
     };
   };
@@ -494,11 +501,15 @@ function viewGame(data){
   const data = decodeState(hash);
   if(!data || !Array.isArray(data.answers) || data.answers.length!==QUESTIONS.length){
     history.replaceState({}, '', location.pathname);
-    viewCreator(prefill);
-    return;
+    viewCreator(prefill); return;
   }
   viewGame(data);
 })();
+
+/* PWA: rejestracja service workera */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 </script>
 </body>
 </html>
