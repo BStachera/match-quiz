@@ -1,39 +1,35 @@
-# Match Quiz — czy pasujemy?
+# Match Quiz — szybki start
 
-Szybki, lekki **quiz do przełamywania lodów**. Ustaw imię, wybierz odpowiedzi w 3 pytaniach bazowych, dołóż 3 losowe (z puli 24) i — jeśli chcesz — **dodaj do 4 własnych pytań Tak/Nie**. Wygeneruj link albo **QR** i wyślij. Druga osoba odpowie — a system policzy procent zgodności.
+## Jak uruchomić lokalnie
+1. Otwórz terminal w tym folderze.
+2. Wpisz:
+   ```bash
+   python3 -m http.server 5500
+   ```
+3. Wejdź w przeglądarce na: http://localhost:5500
 
-- Demo (GitHub Pages): **https://bstachera.github.io/match-quiz/**
-- Repozytorium: **https://github.com/BStachera/match-quiz.git**
+> Nie używaj `file:///…`, bo przeglądarka zablokuje Service Workera i część zasobów.
 
-## Po co to?
-Pierwsze „hej” w apkach randkowych bywa niezręczne. Wspólna mini-gra obniża barierę i od razu daje temat: *„Serio wolisz sushi od pizzy?”*. To nie test zgodności — to **zabawa i pretekst do rozmowy**. Sprawdza się też wśród znajomych, jako żart lub wyzwanie.
+## Co poprawiłem
+- Ujednoliciłem ścieżki skryptów w **index.html** (były `js/...`, a pliki są w głównym katalogu).
+- Dodałem bezpieczną rejestrację Service Workera tylko na `http/https`.
+- Naprawiłem moduły:
+  - **game.js** już nie używa `import`; udostępnia `window.Game.viewGame`.
+  - **creator.js** korzysta z `window.Utils`, eksportuje `window.Creator.viewCreator`.
+- **sw.js** ignoruje żądania z protokołów innych niż `http/https` (np. `chrome-extension` w podglądach).
+- CSP w **index.html** zezwala na style inline oraz fonty z `self` (możesz rozszerzyć wg potrzeb).
 
-## Funkcje
-- **3 pytania bazowe** — zawsze obecne (jedzenie / podejście społ.-polityczne / pomysł na 1. spotkanie).
-- **3 pytania losowe** — z puli **24**; przy każdym przycisk **„🎲 Wylosuj inne”** (podmienia tylko to jedno pytanie).
-- **Własne pytania Tak/Nie** — do **4** sztuk.
-- **Link + QR** — generowane lokalnie; QR można pobrać jako **1000×1000 PNG** z białym marginesem (idealny do wklejki na zdjęcie).
-- **Walidacja kontaktu** — e-mail (`mailto:`), telefon (+/00, 9–12 cyfr), WhatsApp, Instagram, Facebook/Messenger, Telegram, Discord, TikTok, X/Twitter.
-- **Wsteczna kompatybilność** — stare linki (z 5 stałymi pytaniami) nadal działają.
-- **iOS UX** — brak auto-zoomu na inputach, bezpieczne obszary (notch), ciemne tło bez białych rogów.
-- **Krótki hash** — kompresja LZ-String w `#` URL (bez serwera).
+## Budowa
+- `index.html` – UI + CSS + `<script>` w odpowiedniej kolejności.
+- `utils.js`, `ui.js`, `questions.js` – narzędzia, UI i zestaw pytań.
+- `creator.js` – kreator quizu i generator linku/QR.
+- `game.js` – tryb gry i wynik.
+- `app.js` – routing (hash), modal „o projekcie”, rejestracja SW.
+- `sw.js` – prosty cache: network-first dla dokumentów/skryptów, cache-first dla obrazów/fontów.
+- `qrcode.min.js` – biblioteka do generowania QR.
 
-## Prywatność
-- **Zero serwera** — wszystko liczone i generowane lokalnie w przeglądarce.
-- W linku zapisujemy tylko to, co potrzebne do gry (imię, opcjonalny kontakt, zestaw pytań i odpowiedzi autora).
-- Brak analityki, ciasteczek śledzących i ukrytych skryptów.
+## Deploy
+Wystarczy statyczny hosting (Netlify, Vercel, GitHub Pages, dowolny serwer www). Nie wymaga Node/Builda.
+Pamiętaj, że SW działa wyłącznie na `https` (albo na `http://localhost`).
 
-## Jak używać
-1. Otwórz stronę: https://bstachera.github.io/match-quiz/
-2. Wpisz imię, (opcjonalnie) kontakt.
-3. Zaznacz odpowiedzi w 3 bazowych i 3 losowych pytaniach. Użyj „🎲 Wylosuj inne”, jeśli chcesz zmienić pojedyncze pytanie.
-4. (Opcjonalnie) Dodaj do 4 własnych pytań **Tak/Nie**.
-5. Kliknij **„Generuj link + QR”** — skopiuj link lub pobierz QR (1000×1000 PNG).
-6. Wyślij link lub wstaw QR na zdjęcie — druga osoba odpowie, a wynik zgodności pojawi się od razu.
-
-## Dewelopersko
-- Projekt to **pojedynczy plik `index.html`** + `qrcode.min.js` (biblioteka QR od davidshimjs) + favicony/manifest (opcjonalnie).
-- Nie ma bundlera ani zależności NPM. Zero serwera.
-- Używamy **LZ-String (URI)** w inline <script> do kompresji stanu w hashu URL.
-
-### Pliki
+Powodzenia! ✨
