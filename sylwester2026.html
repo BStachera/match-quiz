@@ -240,6 +240,34 @@
       opacity: 0.9;
     }
 
+    /* Przycisk dźwięku */
+    .sound-toggle {
+      margin-top: 10px;
+      align-self: flex-start;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: linear-gradient(120deg, #3bf7ff, #ff4fad);
+      color: #020617;
+      font-size: 0.8rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      cursor: pointer;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .sound-toggle:hover {
+      filter: brightness(1.06);
+    }
+
+    .sound-toggle:active {
+      transform: translateY(1px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+    }
+
     /* Karta Spotify */
     .spotify-card {
       margin-top: 12px;
@@ -435,12 +463,17 @@
     <div class="footer">
       <div class="footer-left">
         <span class="pulse-dot"></span>
-        <span>TIP: kliknij w stronę, by przeglądarka pozwoliła na dźwięk fanfarów 🔊</span>
+        <span>Kliknij przycisk głośnika, żeby włączyć dźwięk fanfarów 🔊</span>
       </div>
       <div class="footer-right">
         Techno / House / Disco Polo Vibes – DJ Śmietana
       </div>
     </div>
+
+    <!-- PRZYCISK GŁOŚNIKA -->
+    <button id="soundToggle" class="sound-toggle">
+      🔇 Włącz dźwięk fanfarów
+    </button>
 
     <div class="spotify-card">
       <div class="spotify-card-title">
@@ -482,8 +515,10 @@
     const fireworksCanvas = document.getElementById("fireworksCanvas");
     const celebrationText = document.getElementById("celebrationText");
     const fanfareAudio = document.getElementById("fanfareAudio");
+    const soundToggleBtn = document.getElementById("soundToggle");
 
     let celebrateStarted = false;
+    let audioEnabled = false;
 
     function pad(num) {
       return String(num).padStart(2, "0");
@@ -680,19 +715,43 @@
       celebrationText.classList.add("show");
       startFireworks();
 
-      try {
-        fanfareAudio.currentTime = 0;
-        fanfareAudio.play().catch(() => {
-          console.warn("Autoplay zablokowany – kliknij w stronę, żeby zagrały fanfary.");
-        });
-      } catch (e) {
-        console.warn("Nie udało się odtworzyć audio:", e);
+      if (audioEnabled) {
+        try {
+          fanfareAudio.currentTime = 0;
+          fanfareAudio.volume = 1;
+          fanfareAudio.muted = false;
+          fanfareAudio.play().catch(() => {
+            console.warn("Przeglądarka nadal blokuje audio.");
+          });
+        } catch (e) {
+          console.warn("Nie udało się odtworzyć audio:", e);
+        }
+      } else {
+        console.log("Audio wyłączone – kliknij przycisk głośnika, aby je włączyć.");
       }
     }
 
-    window.addEventListener("click", () => {
-      if (celebrateStarted && fanfareAudio.paused) {
-        fanfareAudio.play().catch(() => {});
+    // Przycisk głośnika – odblokowanie dźwięku
+    soundToggleBtn.addEventListener("click", async () => {
+      try {
+        if (!audioEnabled) {
+          fanfareAudio.muted = false;
+          fanfareAudio.volume = 1;
+          fanfareAudio.currentTime = 0;
+
+          // "Priming" – play/pause w ramach kliknięcia użytkownika
+          await fanfareAudio.play();
+          fanfareAudio.pause();
+          fanfareAudio.currentTime = 0;
+
+          audioEnabled = true;
+          soundToggleBtn.textContent = "🔊 Dźwięk fanfarów włączony";
+        } else {
+          audioEnabled = false;
+          soundToggleBtn.textContent = "🔇 Włącz dźwięk fanfarów";
+        }
+      } catch (e) {
+        console.warn("Problem z odblokowaniem dźwięku:", e);
       }
     });
   </script>
