@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sylwester 2026 z DJ Śmietana – Glass Neon Countdown</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    :root {
+      --glass-bg: rgba(15, 20, 40, 0.78);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --accent-cyan: #3bf7ff;
+      --accent-pink: #ff4fad;
+      --accent-violet: #7c5cff;
+      --accent-mint: #6cfcc3;
+      --text-main: #f8f9ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 10% 0%, #1e90ff 0, #020617 40%, #02010f 100%);
+      color: var(--text-main);
+      overflow: hidden;
+    }
+
+    /* Duże neonowe kule w tle */
+    .blob {
+      position: fixed;
+      border-radius: 999px;
+      filter: blur(18px);
+      opacity: 0.9;
+      pointer-events: none;
+      z-index: -2;
+    }
+
+    .blob--left {
+      width: 420px;
+      height: 420px;
+      left: -140px;
+      top: 8%;
+      background: radial-gradient(circle at 30% 30%, #3bf7ff 0, #1b1464 55%, transparent 70%);
+    }
+
+    .blob--right {
+      width: 460px;
+      height: 460px;
+      right: -160px;
+      top: 28%;
+      background: radial-gradient(circle at 70% 30%, #ff4fad 0, #1b1464 55%, transparent 70%);
+    }
+
+    .blob--bottom {
+      width: 520px;
+      height: 520px;
+      left: 50%;
+      bottom: -260px;
+      transform: translateX(-50%);
+      background: radial-gradient(circle at 50% 40%, #6cfcc3 0, #020617 60%, transparent 80%);
+    }
+
+    /* Delikatna faktura */
+    .noise {
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' stitchTiles='noStitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Główna karta – frosted glass */
+    .countdown-shell {
+      position: relative;
+      padding: 32px;
+      max-width: 980px;
+      width: calc(100% - 40px);
+      border-radius: 32px;
+      background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.12),
+          rgba(5, 9, 25, 0.96)
+        );
+      background-clip: padding-box;
+      box-shadow:
+        0 24px 70px rgba(0, 0, 0, 0.75),
+        0 0 60px rgba(59, 247, 255, 0.22),
+        0 0 80px rgba(255, 79, 173, 0.15);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(26px) saturate(170%);
+      -webkit-backdrop-filter: blur(26px) saturate(170%);
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+
+    .countdown-header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      text-align: center;
+      align-items: center;
+    }
+
+    .badge {
+      font-size: 0.74rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      padding: 5px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.32);
+      background: linear-gradient(120deg, #3bf7ff 0, #ff4fad 40%, #ffe66b 100%);
+      color: #020617;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #ffffff 0, #ffe66b 40%, #ff4fad 100%);
+      box-shadow: 0 0 10px #ffe66b;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 3.3vw, 2.7rem);
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-shadow:
+        0 0 14px rgba(255, 255, 255, 0.95),
+        0 0 32px rgba(124, 92, 255, 0.8);
+    }
+
+    .subtitle {
+      font-size: 0.95rem;
+      max-width: 560px;
+      color: rgba(232, 236, 255, 0.9);
+    }
+
+    /* Zegar */
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(90px, 1fr));
+      gap: 18px;
+      margin-top: 6px;
+    }
+
+    .time-segment {
+      position: relative;
+      padding: 20px 10px 18px;
+      border-radius: 24px;
+      background:
+        linear-gradient(145deg, rgba(11, 16, 38, 0.98), rgba(24, 32, 68, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.8),
+        0 0 40px rgba(0, 0, 0, 0.9);
+    }
+
+    .time-segment::before {
+      content: "";
+      position: absolute;
+      inset: -40%;
+      background:
+        radial-gradient(circle at 0 0, rgba(59, 247, 255, 0.65), transparent 55%),
+        radial-gradient(circle at 110% 120%, rgba(255, 79, 173, 0.6), transparent 60%);
+      opacity: 0.35;
+      mix-blend-mode: screen;
+    }
+
+    .time-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .time-value {
+      font-size: clamp(2.1rem, 3.2vw, 2.6rem);
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .time-label {
+      font-size: 0.74rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      text-align: center;
+      color: rgba(210, 214, 255, 0.85);
+    }
+
+    /* Stopka pod zegarem */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      font-size: 0.78rem;
+      color: rgba(214, 220, 255, 0.88);
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .footer-left {
+      display: inline-flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--accent-mint);
+      box-shadow: 0 0 16px rgba(108, 252, 195, 0.95);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      70% { transform: scale(1.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 0; }
+    }
+
+    .footer-right {
+      opacity: 0.9;
+    }
+
+    /* Karta Spotify */
+    .spotify-card {
+      margin-top: 12px;
+      padding: 16px 18px 18px;
+      border-radius: 24px;
+      background: radial-gradient(circle at 0 0, rgba(59, 247, 255, 0.15), transparent 55%),
+                  radial-gradient(circle at 100% 120%, rgba(255, 79, 173, 0.18), transparent 60%),
+                  rgba(10, 15, 36, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.8);
+    }
+
+    .spotify-card-title {
+      font-size: 0.88rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(236, 240, 255, 0.9);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .spotify-card-title span:last-child {
+      font-size: 0.78rem;
+      opacity: 0.9;
+      color: rgba(190, 203, 255, 0.96);
+    }
+
+    iframe.spotify-embed {
+      border-radius: 18px;
+      border: none;
+      width: 100%;
+      height: 152px;
+    }
+
+    /* Tryb świętowania po północy */
+    body.celebrate .countdown-shell {
+      animation: celebrate-glow 1.25s ease-in-out infinite alternate;
+    }
+
+    @keyframes celebrate-glow {
+      0% {
+        box-shadow:
+          0 24px 70px rgba(0, 0, 0, 0.8),
+          0 0 70px rgba(59, 247, 255, 0.3),
+          0 0 90px rgba(255, 79, 173, 0.24);
+      }
+      100% {
+        box-shadow:
+          0 28px 90px rgba(0, 0, 0, 0.9),
+          0 0 110px rgba(108, 252, 195, 0.9),
+          0 0 140px rgba(255, 236, 130, 0.85);
+      }
+    }
+
+    /* Canvas fajerwerki + tekst */
+    #fireworksCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.8s ease-out;
+      z-index: 10;
+    }
+
+    #fireworksCanvas.show {
+      opacity: 1;
+    }
+
+    .celebration-text {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.7s ease-out;
+      z-index: 12;
+      text-align: center;
+    }
+
+    .celebration-text.show {
+      opacity: 1;
+    }
+
+    .celebration-text h2 {
+      font-size: clamp(2.1rem, 5vw, 3.2rem);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      text-shadow:
+        0 0 18px rgba(255, 255, 255, 0.95),
+        0 0 40px rgba(124, 92, 255, 1);
+    }
+
+    .celebration-text p {
+      font-size: 1rem;
+      max-width: 460px;
+      color: rgba(245, 245, 255, 0.94);
+    }
+
+    @media (max-width: 720px) {
+      .countdown-shell {
+        padding: 22px 18px 24px;
+        border-radius: 26px;
+      }
+      .time-grid {
+        grid-template-columns: repeat(2, minmax(90px, 1fr));
+      }
+      .subtitle {
+        font-size: 0.88rem;
+      }
+      .footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    @media (max-width: 460px) {
+      h1 {
+        font-size: 1.7rem;
+      }
+      .time-grid {
+        grid-template-columns: repeat(2, minmax(80px, 1fr));
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Neonowe kule + szum -->
+  <div class="blob blob--left"></div>
+  <div class="blob blob--right"></div>
+  <div class="blob blob--bottom"></div>
+  <div class="noise"></div>
+
+  <canvas id="fireworksCanvas"></canvas>
+
+  <div class="celebration-text" id="celebrationText">
+    <h2>🥂 SZCZĘŚLIWEGO NOWEGO ROKU! 🥂</h2>
+    <p>Wejdź ze Śmietaną w nowy rok – impreza do rana, ekipa dobrana. Niech bass prowadzi! 🔊</p>
+  </div>
+
+  <div class="countdown-shell">
+    <div class="countdown-header">
+      <span class="badge">
+        <span class="badge-dot"></span>
+        SYLWESTER 2026 Z DJ ŚMIETANA
+      </span>
+      <h1>ODLICZANIE DO SYLWESTER 2026</h1>
+      <p class="subtitle">
+        Odliczanie do najbliższego Nowego Roku. Gdy zegar wybije północ –
+        odpalają się fajerwerki i fanfary w cyberpunkowo–szklanym klimacie.
+      </p>
+    </div>
+
+    <div class="time-grid" aria-label="Odliczanie do Nowego Roku">
+      <div class="time-segment">
+        <div class="time-inner">
+          <div class="time-value" id="days">00</div>
+          <div class="time-label">Dni</div>
+        </div>
+      </div>
+      <div class="time-segment">
+        <div class="time-inner">
+          <div class="time-value" id="hours">00</div>
+          <div class="time-label">Godziny</div>
+        </div>
+      </div>
+      <div class="time-segment">
+        <div class="time-inner">
+          <div class="time-value" id="minutes">00</div>
+          <div class="time-label">Minuty</div>
+        </div>
+      </div>
+      <div class="time-segment">
+        <div class="time-inner">
+          <div class="time-value" id="seconds">00</div>
+          <div class="time-label">Sekundy</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <span class="pulse-dot"></span>
+        <span>TIP: kliknij w stronę, by przeglądarka pozwoliła na dźwięk fanfarów 🔊</span>
+      </div>
+      <div class="footer-right">
+        Techno / House / Disco Polo Vibes – DJ Śmietana
+      </div>
+    </div>
+
+    <div class="spotify-card">
+      <div class="spotify-card-title">
+        <span>PLAYLISTA SYLWESTER 2026 Z DJ ŚMIETANA 🎆</span>
+        <span>Bezpośrednio ze Spotify</span>
+      </div>
+      <!-- EMBED SPOTIFY -->
+      <iframe
+        class="spotify-embed"
+        data-testid="embed-iframe"
+        style="border-radius:12px"
+        src="https://open.spotify.com/embed/playlist/6U0PKgtzfeecpFEwbOriCH?utm_source=generator"
+        frameborder="0"
+        allowfullscreen=""
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        loading="lazy">
+      </iframe>
+    </div>
+  </div>
+
+  <!-- PODMIEŃ SOURCE NA SWÓJ PLIK Z FANFARAMI -->
+  <audio id="fanfareAudio" src="fanfare.mp3" preload="auto"></audio>
+
+  <script>
+    // Najbliższy Nowy Rok
+    function getNextNewYear() {
+      const now = new Date();
+      const nextYear = now.getFullYear() + 1;
+      return new Date(`January 1, ${nextYear} 00:00:00`);
+    }
+
+    const targetDate = getNextNewYear();
+
+    const daysEl = document.getElementById("days");
+    const hoursEl = document.getElementById("hours");
+    const minutesEl = document.getElementById("minutes");
+    const secondsEl = document.getElementById("seconds");
+
+    const fireworksCanvas = document.getElementById("fireworksCanvas");
+    const celebrationText = document.getElementById("celebrationText");
+    const fanfareAudio = document.getElementById("fanfareAudio");
+
+    let celebrateStarted = false;
+
+    function pad(num) {
+      return String(num).padStart(2, "0");
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      const diff = targetDate - now;
+
+      if (diff <= 0) {
+        daysEl.textContent = "00";
+        hoursEl.textContent = "00";
+        minutesEl.textContent = "00";
+        secondsEl.textContent = "00";
+
+        if (!celebrateStarted) {
+          celebrateStarted = true;
+          startCelebration();
+        }
+        return;
+      }
+
+      const totalSeconds = Math.floor(diff / 1000);
+      const seconds = totalSeconds % 60;
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const minutes = totalMinutes % 60;
+      const totalHours = Math.floor(totalMinutes / 60);
+      const hours = totalHours % 24;
+      const days = Math.floor(totalHours / 24);
+
+      daysEl.textContent = pad(days);
+      hoursEl.textContent = pad(hours);
+      minutesEl.textContent = pad(minutes);
+      secondsEl.textContent = pad(seconds);
+
+      // Start celebracji dokładnie przy 1 sekundzie
+      if (totalSeconds === 1 && !celebrateStarted) {
+        celebrateStarted = true;
+        startCelebration();
+      }
+    }
+
+    const countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // FAJERWERKI
+    let fwCtx;
+    let fwWidth;
+    let fwHeight;
+    let fireworks = [];
+    let particles = [];
+    let fireworksAnimationId;
+    let fireworksRunning = false;
+
+    function resizeCanvas() {
+      fwWidth = window.innerWidth;
+      fwHeight = window.innerHeight;
+      fireworksCanvas.width = fwWidth;
+      fireworksCanvas.height = fwHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function Firework(startX, startY, targetX, targetY) {
+      this.x = startX;
+      this.y = startY;
+      this.sx = startX;
+      this.sy = startY;
+      this.tx = targetX;
+      this.ty = targetY;
+
+      this.distanceToTarget = Math.hypot(targetX - startX, targetY - startY);
+      this.distanceTraveled = 0;
+
+      const angle = Math.atan2(targetY - startY, targetX - startX);
+      this.vx = Math.cos(angle) * 6;
+      this.vy = Math.sin(angle) * 6;
+
+      this.brightness = random(60, 90);
+      this.hue = random(180, 340);
+      this.alpha = 1;
+    }
+
+    Firework.prototype.update = function (index) {
+      const prevX = this.x;
+      const prevY = this.y;
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      const distancePart = Math.hypot(this.x - this.sx, this.y - this.sy);
+      this.distanceTraveled = distancePart;
+
+      if (this.distanceTraveled >= this.distanceToTarget) {
+        createParticles(this.tx, this.ty, this.hue);
+        fireworks.splice(index, 1);
+      } else {
+        fwCtx.beginPath();
+        fwCtx.moveTo(prevX, prevY);
+        fwCtx.lineTo(this.x, this.y);
+        fwCtx.strokeStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`;
+        fwCtx.stroke();
+      }
+    };
+
+    function Particle(x, y, hue) {
+      this.x = x;
+      this.y = y;
+      this.hue = hue;
+      this.alpha = 1;
+      this.brightness = random(60, 100);
+      this.radius = random(1, 3);
+
+      const angle = random(0, Math.PI * 2);
+      const speed = random(2, 6);
+      this.vx = Math.cos(angle) * speed;
+      this.vy = Math.sin(angle) * speed;
+      this.friction = 0.92;
+      this.gravity = 0.18;
+    }
+
+    Particle.prototype.update = function (index) {
+      this.vx *= this.friction;
+      this.vy *= this.friction;
+      this.vy += this.gravity;
+
+      this.x += this.vx;
+      this.y += this.vy;
+      this.alpha -= 0.015;
+
+      if (this.alpha <= 0) {
+        particles.splice(index, 1);
+      } else {
+        fwCtx.beginPath();
+        fwCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        fwCtx.fillStyle = `hsla(${this.hue}, 100%, ${this.brightness}%, ${this.alpha})`;
+        fwCtx.fill();
+      }
+    };
+
+    function createParticles(x, y, hue) {
+      const count = 70;
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y, hue));
+      }
+    }
+
+    function launchFirework() {
+      const startX = fwWidth / 2;
+      const startY = fwHeight + 10;
+      const targetX = random(100, fwWidth - 100);
+      const targetY = random(50, fwHeight / 2);
+      fireworks.push(new Firework(startX, startY, targetX, targetY));
+    }
+
+    function fireworksLoop() {
+      if (!fireworksRunning) return;
+
+      fireworksAnimationId = requestAnimationFrame(fireworksLoop);
+
+      fwCtx.globalCompositeOperation = "destination-out";
+      fwCtx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      fwCtx.fillRect(0, 0, fwWidth, fwHeight);
+      fwCtx.globalCompositeOperation = "lighter";
+
+      if (Math.random() < 0.12) {
+        launchFirework();
+      }
+
+      fireworks.forEach((fw, index) => fw.update(index));
+      particles.forEach((p, index) => p.update(index));
+    }
+
+    function startFireworks() {
+      resizeCanvas();
+      fwCtx = fireworksCanvas.getContext("2d");
+      fireworksRunning = true;
+      fireworksCanvas.classList.add("show");
+      fireworksLoop();
+
+      setTimeout(() => {
+        fireworksRunning = false;
+        fireworksCanvas.classList.remove("show");
+        cancelAnimationFrame(fireworksAnimationId);
+      }, 20000);
+    }
+
+    function startCelebration() {
+      document.body.classList.add("celebrate");
+      celebrationText.classList.add("show");
+      startFireworks();
+
+      try {
+        fanfareAudio.currentTime = 0;
+        fanfareAudio.play().catch(() => {
+          console.warn("Autoplay zablokowany – kliknij w stronę, żeby zagrały fanfary.");
+        });
+      } catch (e) {
+        console.warn("Nie udało się odtworzyć audio:", e);
+      }
+    }
+
+    window.addEventListener("click", () => {
+      if (celebrateStarted && fanfareAudio.paused) {
+        fanfareAudio.play().catch(() => {});
+      }
+    });
+  </script>
+</body>
+</html>
